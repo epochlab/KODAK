@@ -19,12 +19,9 @@ static void onMouseMove(GLFWwindow*, double xpos, double ypos) {
 
 static const char* viewModeName(int m) {
     switch (m) {
-        case 1: return "Diffuse";
-        case 2: return "Wireframe";
-        case 3: return "Depth";
-        case 4: return "Normals";
-        case 5: return "Position";
-        case 6: return "UV";
+        case 1: return "Diffuse";    case 2: return "Wireframe";
+        case 3: return "Depth";      case 4: return "Normals";
+        case 5: return "Position";   case 6: return "UV";
         default: return "Unknown";
     }
 }
@@ -38,8 +35,47 @@ static float queryMemoryMB() {
     return static_cast<float>(info.phys_footprint) / (1024.0f * 1024.0f);
 }
 
+// ── Off-screen render target ───────────────────────────────────────────────
+struct RenderTarget {
+    GLuint fbo = 0, colorTex = 0, depthRbo = 0;
+    int    w   = 0, h = 0;
+
+    void create(int width, int height) {
+        w = width; h = height;
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+        glGenTextures(1, &colorTex);
+        glBindTexture(GL_TEXTURE_2D, colorTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex, 0);
+
+        glGenRenderbuffers(1, &depthRbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, depthRbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRbo);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    void destroy() {
+        if (fbo)      { glDeleteFramebuffers(1, &fbo);       fbo      = 0; }
+        if (colorTex) { glDeleteTextures(1, &colorTex);      colorTex = 0; }
+        if (depthRbo) { glDeleteRenderbuffers(1, &depthRbo); depthRbo = 0; }
+        w = h = 0;
+    }
+
+    void ensureSize(int width, int height) {
+        if (w != width || h != height) { destroy(); create(width, height); }
+    }
+};
+
 int main() {
     try {
+        constexpr int RENDER_SCALE = 2;   // 1=full, 2=half, 4=quarter
+
         Window win(2048, 1152, "Renderer");
         glfwSetInputMode(win.handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         glfwSetCursorPosCallback(win.handle(), onMouseMove);
@@ -47,6 +83,10 @@ int main() {
         Shader shader("shaders/basic.vert", "shaders/basic.frag");
         shader.use();
         shader.set("uAlbedo", 0);
+
+        Shader blitShader("shaders/blit.vert", "shaders/blit.frag");
+        blitShader.use();
+        blitShader.set("uFrame", 0);
 
         Camera camera({0.0f, 1.0f, 10.0f}, win.aspectRatio());
         g_camera = &camera;
@@ -57,8 +97,14 @@ int main() {
         Texture white = Texture::white();
 
         Mesh cube   = Mesh::cube();
-        Mesh sphere = Mesh::sphere(16, 16);   // 512 tris, radius 0.5m
-        Mesh ground = Mesh::plane(10.0f);     // 10m × 10m
+        Mesh sphere = Mesh::sphere(16, 16);
+        Mesh ground = Mesh::plane(10.0f);
+
+        // Empty VAO for fullscreen blit (no VBO — blit.vert uses gl_VertexID)
+        GLuint blitVAO = 0;
+        glGenVertexArrays(1, &blitVAO);
+
+        RenderTarget rt{};
 
         // GPU timer query
         GLuint gpuQuery       = 0;
@@ -78,7 +124,7 @@ int main() {
             if (glfwGetKey(win.handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
 
-            // ── View mode keys ─────────────────────────────────
+            // ── View mode keys 1–6 ────────────────────────────────
             static const int viewKeys[6] = {
                 GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6
             };
@@ -91,15 +137,23 @@ int main() {
             camera.setAspect(win.aspectRatio());
             camera.processInput(win.handle(), dt);
 
-            // ── Read last frame's GPU timer ────────────────────
+            // ── Ensure FBO matches current scaled resolution ──────
+            int rtW = win.width()  / RENDER_SCALE;
+            int rtH = win.height() / RENDER_SCALE;
+            rt.ensureSize(rtW, rtH);
+
+            // ── Read last frame's GPU timer ────────────────────────
             if (gpuQueryActive) {
                 GLuint ns = 0;
                 glGetQueryObjectuiv(gpuQuery, GL_QUERY_RESULT, &ns);
-                stats.gpuTimeMs  = static_cast<float>(ns) / 1e6f;
-                gpuQueryActive   = false;
+                stats.gpuTimeMs = static_cast<float>(ns) / 1e6f;
+                gpuQueryActive  = false;
             }
 
-            // ── Draw scene ─────────────────────────────────────
+            // ── Render scene → off-screen FBO ──────────────────────
+            glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
+            glViewport(0, 0, rtW, rtH);
+            glEnable(GL_DEPTH_TEST);
             glClearColor(0.08f, 0.10f, 0.14f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glPolygonMode(GL_FRONT_AND_BACK, viewMode == 2 ? GL_LINE : GL_FILL);
@@ -132,9 +186,22 @@ int main() {
             glEndQuery(GL_TIME_ELAPSED);
             gpuQueryActive = true;
 
+            // ── Blit FBO → screen ──────────────────────────────────
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, win.width(), win.height());
+            glDisable(GL_DEPTH_TEST);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-            // ── Collect stats ──────────────────────────────────
+            blitShader.use();
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, rt.colorTex);
+            glBindVertexArray(blitVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindVertexArray(0);
+
+            glEnable(GL_DEPTH_TEST);
+
+            // ── Collect stats ──────────────────────────────────────
             stats.fps            = (dt > 0.0f) ? 1.0f / dt : 0.0f;
             stats.frameTimeMs    = dt * 1000.0f;
             stats.memMB          = queryMemoryMB();
@@ -143,24 +210,23 @@ int main() {
             stats.totalVertices  = cube.indexCount()    + sphere.indexCount()    + ground.indexCount();
             stats.width          = win.width();
             stats.height         = win.height();
-            stats.camPos            = camera.position();
-            stats.camRotX           = camera.pitch();      // X = pitch
-            stats.camRotY           = camera.yaw();        // Y = yaw
-            stats.camRotZ           = 0.0f;               // no roll
-            stats.camFilmbackMm     = camera.filmback();
-            stats.camFocalLengthMm  = camera.focalLength();
-            stats.camNear           = camera.nearPlane();
-            stats.camFar            = camera.farPlane();
-            stats.viewMode       = viewMode;
-            stats.viewModeName   = ::viewModeName(viewMode);
+            stats.renderScale    = RENDER_SCALE;
+            stats.camPos             = camera.position();
+            stats.camRotX            = camera.pitch();
+            stats.camRotY            = camera.yaw();
+            stats.camRotZ            = 0.0f;
+            stats.camFilmbackMm      = camera.filmback();
+            stats.camFocalLengthMm   = camera.focalLength();
+            stats.camNear            = camera.nearPlane();
+            stats.camFar             = camera.farPlane();
+            stats.viewMode           = viewMode;
+            stats.viewModeName       = ::viewModeName(viewMode);
+            stats.numObjects         = 3;
+            stats.objects[0]         = {"cube",   cube.triangleCount(),   cube.indexCount()};
+            stats.objects[1]         = {"sphere", sphere.triangleCount(), sphere.indexCount()};
+            stats.objects[2]         = {"ground", ground.triangleCount(), ground.indexCount()};
 
-            // Per-object breakdown
-            stats.numObjects     = 3;
-            stats.objects[0]     = {"cube",   cube.triangleCount(),   cube.indexCount()};
-            stats.objects[1]     = {"sphere", sphere.triangleCount(), sphere.indexCount()};
-            stats.objects[2]     = {"ground", ground.triangleCount(), ground.indexCount()};
-
-            // ── HUD overlay ────────────────────────────────────
+            // ── HUD overlay ────────────────────────────────────────
             hud.beginFrame();
             hud.draw(stats);
             hud.endFrame();
@@ -168,7 +234,10 @@ int main() {
             win.swapAndPoll();
         }
 
+        rt.destroy();
+        glDeleteVertexArrays(1, &blitVAO);
         glDeleteQueries(1, &gpuQuery);
+
     } catch (const std::exception& e) {
         std::cerr << "Fatal: " << e.what() << '\n';
         return 1;

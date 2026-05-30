@@ -25,6 +25,7 @@ struct FrameStats {
     // Viewport
     int       width           = 0;
     int       height          = 0;
+    int       renderScale     = 1;   // divisor: 1=full, 2=half, 4=quarter
 
     // Scene geometry
     int       drawCalls       = 0;
