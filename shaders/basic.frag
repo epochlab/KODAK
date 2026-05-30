@@ -10,7 +10,7 @@ uniform sampler2D uSkyHDR;          // equirectangular HDRI for diffuse irradian
 uniform int       uViewMode;        // 1=beauty 2=wire 3=alpha 4=depth 5=pos 6=normals 7=uv 8=albedo 9=direct_diffuse 10=ao
 uniform float     uNear;
 uniform float     uFar;
-uniform float     uIrradianceScale;
+uniform float     uHdriExposure;
 
 layout(location = 0) out vec4 gColor;
 layout(location = 1) out vec4 gNormal;  // view-space normals for SSAO
@@ -20,7 +20,7 @@ const float PI = 3.14159265358979;
 vec3 sampleEnv(vec3 n) {
     float phi   = atan(n.z, n.x);
     float theta = acos(clamp(n.y, -1.0, 1.0));
-    return texture(uSkyHDR, vec2(phi / (2.0 * PI) + 0.5, theta / PI)).rgb;
+    return texture(uSkyHDR, vec2(phi / (2.0 * PI) + 0.5, theta / PI)).rgb * uHdriExposure;
 }
 
 void main() {
@@ -59,12 +59,12 @@ void main() {
 
     } else if (uViewMode == 9) {
         // Direct Diffuse — HDRI irradiance only, no albedo
-        gColor = vec4(sampleEnv(normalize(vNormal)) * uIrradianceScale, 1.0);
+        gColor = vec4(sampleEnv(normalize(vNormal)), 1.0);
 
     } else {
         // Mode 1 (Beauty) and mode 10 (AO, display overridden by blit.frag)
         vec3 albedo     = texture(uAlbedo, vUV).rgb;
-        vec3 irradiance = sampleEnv(normalize(vNormal)) * uIrradianceScale;
+        vec3 irradiance = sampleEnv(normalize(vNormal));
         gColor = vec4(albedo * irradiance, 1.0);
     }
 }

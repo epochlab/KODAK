@@ -26,12 +26,8 @@ struct AppConfig {
 
     struct Scene {
         std::string geometry = "assets/geo/rock_shopk_gltf_high/Rock_shopk_High.gltf";
+        glm::vec3   rotation {};   // XYZ Euler degrees applied to loaded geometry
     } scene;
-
-    struct Light {
-        float exposure  = 1.f;
-        float intensity = 1.f;
-    } light;
 };
 
 // Returns defaults when the file is absent or a key is missing.

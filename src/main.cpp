@@ -1,6 +1,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <mach/mach.h>
 #include <stb_image_write.h>
 #include <iostream>
@@ -15,7 +16,6 @@
 #include "window.hpp"
 #include "shader.hpp"
 #include "camera.hpp"
-#include "mesh.hpp"
 #include "texture.hpp"
 #include "hud.hpp"
 #include "frustum.hpp"
@@ -151,6 +151,7 @@ int main() {
         blitShader.use();
         blitShader.set("uFrame", 0);
         blitShader.set("uAO",    1);
+        blitShader.set("uDepth", 2);
 
         Shader skyShader("shaders/sky.vert", "shaders/sky.frag");
         skyShader.use();
@@ -241,11 +242,15 @@ int main() {
         float  smoothFps  = 0.0f;
         double lastTime   = glfwGetTime();
 
-        const float irradianceScale = cfg.light.exposure * cfg.light.intensity;
         const glm::vec3 hdriRotRad(
             glm::radians(cfg.hdri.rotation.x),
             glm::radians(cfg.hdri.rotation.y),
             glm::radians(cfg.hdri.rotation.z));
+
+        glm::mat4 sceneRot(1.0f);
+        sceneRot = glm::rotate(sceneRot, glm::radians(cfg.scene.rotation.x), glm::vec3(1,0,0));
+        sceneRot = glm::rotate(sceneRot, glm::radians(cfg.scene.rotation.y), glm::vec3(0,1,0));
+        sceneRot = glm::rotate(sceneRot, glm::radians(cfg.scene.rotation.z), glm::vec3(0,0,1));
 
         while (!win.shouldClose()) {
             double now = glfwGetTime();
@@ -339,9 +344,9 @@ int main() {
             shader.set("uViewMode",        viewMode);
             shader.set("uNear",            camera.nearPlane());
             shader.set("uFar",             camera.farPlane());
-            shader.set("uIrradianceScale", irradianceScale);
+            shader.set("uHdriExposure", cfg.hdri.exposure);
 
-            const glm::mat4 mRock = rock.transform();
+            const glm::mat4 mRock = sceneRot * rock.transform();
             Frustum frustum;
             frustum.update(proj * view);
 
@@ -386,7 +391,6 @@ int main() {
             ssaoShader.use();
             ssaoShader.set("uProj",    proj);
             ssaoShader.set("uInvProj", invProj);
-            rt.normalTex ? (void)0 : (void)0;  // already set at startup
             glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, rt.normalTex);
             glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, rt.depthTex);
             glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, noiseTex);
@@ -407,6 +411,7 @@ int main() {
             blitShader.set("uViewMode", viewMode);
             glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, rt.colorTex);
             glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, blurRt.tex);
+            glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, rt.depthTex);
             glBindVertexArray(blitVAO);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             glBindVertexArray(0);

@@ -1,7 +1,6 @@
 #include "model.hpp"
 #include <cgltf.h>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <stdexcept>
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -172,10 +171,6 @@ Model Model::loadGLTF(const std::string& path) {
 
     if (model.m_submeshes.empty())
         throw std::runtime_error("cgltf: no renderable primitives found in " + path);
-
-    // Z-up → Y-up correction: Megascans/FBX assets export Z-up; glTF spec is Y-up.
-    model.m_transform = glm::rotate(glm::mat4(1.0f),
-        glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * model.m_transform;
 
     // Bounding sphere in model space (transform applied as model matrix at draw time).
     model.m_boundingRadius = model.m_submeshes[0].mesh.boundingRadius();

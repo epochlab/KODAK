@@ -1,6 +1,5 @@
 #version 330 core
-// Fullscreen triangle at the far plane — no VBO, driven by gl_VertexID (same as blit.vert).
-// z = 1.0 places the sky at NDC far plane so all geometry passes depth test in front of it.
+// Fullscreen triangle at NDC far plane (z=1.0) — sky fragments always behind geometry.
 out vec2 vTexCoord;
 void main() {
     vec2 pos;

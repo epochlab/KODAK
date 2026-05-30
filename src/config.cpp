@@ -63,12 +63,7 @@ AppConfig loadConfig(const std::string& path) {
         const auto& s = j["scene"];
         if (s.contains("geometry") && s["geometry"].is_string())
             cfg.scene.geometry = s["geometry"].get<std::string>();
-    }
-
-    if (j.contains("light")) {
-        const auto& l = j["light"];
-        cfg.light.exposure  = jf(l.value("exposure",  json(1.f)), cfg.light.exposure);
-        cfg.light.intensity = jf(l.value("intensity", json(1.f)), cfg.light.intensity);
+        cfg.scene.rotation = jvec3(s.value("rotation", json::array({0,0,0})), cfg.scene.rotation);
     }
 
     return cfg;
