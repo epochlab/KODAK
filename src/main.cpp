@@ -26,6 +26,7 @@ static const char* viewModeName(int m) {
         case 1: return "Diffuse";    case 2: return "Wireframe";
         case 3: return "Depth";      case 4: return "Position";
         case 5: return "Normals";    case 6: return "UV";
+        case 7: return "Irradiance";
         default: return "Unknown";
     }
 }
@@ -95,7 +96,8 @@ int main() {
 
         Shader shader("shaders/basic.vert", "shaders/basic.frag");
         shader.use();
-        shader.set("uAlbedo", 0);
+        shader.set("uAlbedo",  0);
+        shader.set("uSkyHDR",  1);
 
         Shader blitShader("shaders/blit.vert", "shaders/blit.frag");
         blitShader.use();
@@ -129,7 +131,7 @@ int main() {
 
         FrameStats stats{};
         int    viewMode  = 1;
-        bool   prevKeys[6] = {};
+        bool   prevKeys[7] = {};
         float  smoothFps = 0.0f;
         double lastTime  = glfwGetTime();
 
@@ -141,11 +143,11 @@ int main() {
             if (glfwGetKey(win.handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
 
-            // ── View mode keys 1–6 ────────────────────────────────
-            static const int viewKeys[6] = {
-                GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6
+            // ── View mode keys 1–7 ────────────────────────────────
+            static const int viewKeys[7] = {
+                GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6, GLFW_KEY_7
             };
-            for (int i = 0; i < 6; ++i) {
+            for (int i = 0; i < 7; ++i) {
                 bool down = glfwGetKey(win.handle(), viewKeys[i]) == GLFW_PRESS;
                 if (down && !prevKeys[i]) viewMode = i + 1;
                 prevKeys[i] = down;
@@ -197,7 +199,8 @@ int main() {
 
             glBeginQuery(GL_TIME_ELAPSED, gpuQueries[queryWrite]);
 
-            // ── Sky (depth mask off so it never occludes geometry) ─
+            // ── Sky (depth test + mask off so it never occludes geometry) ─
+            glDisable(GL_DEPTH_TEST);
             glDepthMask(GL_FALSE);
             skyShader.use();
             skyShader.set("uInvVP", glm::inverse(proj * view));
@@ -206,7 +209,9 @@ int main() {
             glDrawArrays(GL_TRIANGLES, 0, 3);
             glBindVertexArray(0);
             glDepthMask(GL_TRUE);
-            shader.use();  // restore scene shader
+            glEnable(GL_DEPTH_TEST);
+            shader.use();
+            skyTex.bind(1);  // HDRI on unit 1 for diffuse irradiance in basic.frag
 
             // ── Rock model ─────────────────────────────────────────
             int drawn = 0, total = 1;

@@ -4,13 +4,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] — Milestone 6: HDRI Equirectangular Skydome
+## [Unreleased] — Milestone 7: Project Quality & Bug Fixes
 
-- Equirectangular HDR sky rendered as fullscreen triangle before geometry (depth mask off)
-- World-space direction reconstructed per-pixel via `inverse(proj * view)` uniform
+---
+
+## [M6 — HDRI Equirectangular Skydome] — 2026-05-31
+
+- Equirectangular HDR sky rendered as fullscreen triangle before geometry (depth test + mask off)
+- World-space direction reconstructed per-pixel via `inverse(proj * view)` uniform; sky is world-space fixed (rotating the camera reveals different parts of the panorama)
 - HDR texture loading in `Texture`: detects `.hdr` extension → `stbi_loadf` + `GL_RGB16F`, no flip, no mipmaps
 - FBO colour buffer upgraded `GL_RGB8` → `GL_RGB16F` to preserve HDR range through the render pass
-- Reinhard tonemapping added to `blit.frag` (replaces raw passthrough); M8 will extend this
+- HDRI diffuse irradiance: geometry lit by sampling the equirectangular map along the surface normal (direct radiance sample; M8 PBR replaces with preconvolved irradiance map)
+- Directional light removed from `basic.frag`
+- View mode 7 — Irradiance: shows raw HDRI contribution, no albedo
+- Linear HDR passthrough in `blit.frag` (OCIO hook reserved for a later milestone)
 
 ---
 

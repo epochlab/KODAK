@@ -1,17 +1,10 @@
-# RENDER
-
-A 3D render engine built from scratch in C++ with OpenGL.
-
-## Status
-
-**Milestone 6 — HDRI Equirectangular Skydome** (in progress)
+# BOUNCE
 
 ## Requirements
 
 - macOS (OpenGL 3.3 Core Profile via system framework)
 - CMake ≥ 3.20
-- C++17 compiler (Xcode CLT or clang)
-- Git (FetchContent pulls dependencies at configure time)
+- C++17 compiler
 
 ## Build
 
@@ -50,6 +43,7 @@ Run from the **project root** (shaders load relative to the working directory):
 | 4 | Position |
 | 5 | Normals |
 | 6 | UV |
+| 7 | Irradiance |
 
 ## Dependencies
 
@@ -93,7 +87,8 @@ shaders/
 | 3 | Debug HUD — Dear ImGui overlay, 6 view modes, FBO render scale | ✓ done |
 | 4 | Optimisation — smooth FPS, non-stalling GPU timer, GPU-mem tracking, uniform batching, frustum culling | ✓ done |
 | 5 | Geometry Loading — glTF 2.0 (cgltf): meshes, materials, textures, scene hierarchy | ✓ done |
-| 6 | HDRI Skydome — equirectangular HDR sky, Reinhard tonemapping, RGB16F FBO | in progress |
-| 7 | PBR Shader / Material System — Cook-Torrance BRDF, IBL | planned |
-| 8 | Camera & Lens Effects — HDR framebuffer, tone mapping, bloom, DoF | planned |
-| 9 | Advanced — OpenEXR I/O, Alembic geometry caches | planned |
+| 6 | HDRI Skydome — equirectangular HDR sky, HDRI diffuse irradiance, linear pipeline | ✓ done |
+| 7 | Project Quality — SSAO, JSON config, render scale fix, Z-up correction, frame capture | in progress |
+| 8 | PBR Shader / Material System — Cook-Torrance BRDF, IBL, ORM maps | planned |
+| 9 | Camera & Lens Effects — exposure, bloom, DoF | planned |
+| 10 | Advanced — OpenEXR I/O, Alembic geometry caches | planned |
