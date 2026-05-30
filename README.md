@@ -4,7 +4,7 @@ A 3D render engine built from scratch in C++ with OpenGL.
 
 ## Status
 
-**Milestone 4 — Optimisation: FPS · Memory · Speed** (in progress)
+**Milestone 4 — Optimisation: FPS · Memory · Speed** ✓ done — **Milestone 5 — glTF Geometry Loading** next
 
 ## Requirements
 
@@ -87,8 +87,8 @@ shaders/
 | 1 | Hello 3D World — window, camera, primitives, diffuse shading | ✓ done |
 | 2 | Texture Loading — stb_image, UV coords, Mesh::sphere() | ✓ done |
 | 3 | Debug HUD — Dear ImGui overlay, 6 view modes, FBO render scale | ✓ done |
-| 4 | Optimisation — smooth FPS, non-stalling GPU timer, GPU-mem tracking, uniform batching, frustum culling | in progress |
-| 5 | Geometry Loading — OBJ (tinyobjloader) + glTF 2.0 (cgltf) | planned |
+| 4 | Optimisation — smooth FPS, non-stalling GPU timer, GPU-mem tracking, uniform batching, frustum culling | ✓ done |
+| 5 | Geometry Loading — glTF 2.0 (cgltf): meshes, materials, textures, scene hierarchy | next |
 | 6 | HDRI Skydome — equirectangular HDR sky, HDRI-driven ambient | planned |
 | 7 | PBR Shader / Material System — Cook-Torrance BRDF, IBL | planned |
 | 8 | Camera & Lens Effects — HDR framebuffer, tone mapping, bloom, DoF | planned |
