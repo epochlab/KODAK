@@ -80,8 +80,8 @@ static void walkNodes(const cgltf_node* const* nodes, cgltf_size count,
                         verts[vi].nz = readFloat(normAcc, vi, 2);
                     }
                     if (uvAcc) {
-                        verts[vi].u = readFloat(uvAcc, vi, 0);
-                        verts[vi].v = readFloat(uvAcc, vi, 1);
+                        verts[vi].u =       readFloat(uvAcc, vi, 0);
+                        verts[vi].v = 1.0f - readFloat(uvAcc, vi, 1);  // glTF v=0 is top; GL v=0 is bottom
                     }
                 }
 
