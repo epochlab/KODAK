@@ -1,6 +1,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <mach/mach.h>
 #include <iostream>
 #include <stdexcept>
 #include "window.hpp"
@@ -27,6 +28,15 @@ static const char* viewModeName(int m) {
     }
 }
 
+static float queryMemoryMB() {
+    task_vm_info_data_t info;
+    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+    if (task_info(mach_task_self(), TASK_VM_INFO,
+                  reinterpret_cast<task_info_t>(&info), &count) != KERN_SUCCESS)
+        return 0.0f;
+    return static_cast<float>(info.phys_footprint) / (1024.0f * 1024.0f);
+}
+
 int main() {
     try {
         Window win(1280, 720, "Renderer");
@@ -46,13 +56,18 @@ int main() {
         Texture white = Texture::white();
 
         Mesh cube   = Mesh::cube();
-        Mesh sphere = Mesh::sphere();
+        Mesh sphere = Mesh::sphere(16, 16);   // 512 tris — reduced from 32×32
         Mesh ground = Mesh::plane(14.0f);
 
+        // GPU timer query
+        GLuint gpuQuery       = 0;
+        bool   gpuQueryActive = false;
+        glGenQueries(1, &gpuQuery);
+
         FrameStats stats{};
-        int  viewMode   = 1;
-        bool prevKeys[5] = {};          // previous-frame state for keys 1–5
-        double lastTime = glfwGetTime();
+        int  viewMode    = 1;
+        bool prevKeys[5] = {};
+        double lastTime  = glfwGetTime();
 
         while (!win.shouldClose()) {
             double now = glfwGetTime();
@@ -62,7 +77,7 @@ int main() {
             if (glfwGetKey(win.handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
 
-            // ── View mode keys (one-shot on press) ─────────────
+            // ── View mode keys ─────────────────────────────────
             static const int viewKeys[5] = {
                 GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5
             };
@@ -75,11 +90,20 @@ int main() {
             camera.setAspect(win.aspectRatio());
             camera.processInput(win.handle(), dt);
 
+            // ── Read last frame's GPU timer ────────────────────
+            if (gpuQueryActive) {
+                GLuint ns = 0;
+                glGetQueryObjectuiv(gpuQuery, GL_QUERY_RESULT, &ns);
+                stats.gpuTimeMs  = static_cast<float>(ns) / 1e6f;
+                gpuQueryActive   = false;
+            }
+
             // ── Draw scene ─────────────────────────────────────
             glClearColor(0.08f, 0.10f, 0.14f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             glPolygonMode(GL_FRONT_AND_BACK, viewMode == 2 ? GL_LINE : GL_FILL);
+
+            glBeginQuery(GL_TIME_ELAPSED, gpuQuery);
 
             shader.use();
             shader.set("uView",       camera.viewMatrix());
@@ -104,12 +128,15 @@ int main() {
             shader.set("uModel", mGround);
             ground.draw();
 
-            // Restore fill for ImGui
+            glEndQuery(GL_TIME_ELAPSED);
+            gpuQueryActive = true;
+
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
             // ── Collect stats ──────────────────────────────────
             stats.fps            = (dt > 0.0f) ? 1.0f / dt : 0.0f;
             stats.frameTimeMs    = dt * 1000.0f;
+            stats.memMB          = queryMemoryMB();
             stats.drawCalls      = 3;
             stats.totalTriangles = cube.triangleCount() + sphere.triangleCount() + ground.triangleCount();
             stats.totalVertices  = cube.indexCount()    + sphere.indexCount()    + ground.indexCount();
@@ -118,8 +145,17 @@ int main() {
             stats.camPos         = camera.position();
             stats.camYaw         = camera.yaw();
             stats.camPitch       = camera.pitch();
+            stats.camFov         = camera.fov();
+            stats.camNear        = camera.nearPlane();
+            stats.camFar         = camera.farPlane();
             stats.viewMode       = viewMode;
             stats.viewModeName   = ::viewModeName(viewMode);
+
+            // Per-object breakdown
+            stats.numObjects     = 3;
+            stats.objects[0]     = {"cube",   cube.triangleCount(),   cube.indexCount()};
+            stats.objects[1]     = {"sphere", sphere.triangleCount(), sphere.indexCount()};
+            stats.objects[2]     = {"ground", ground.triangleCount(), ground.indexCount()};
 
             // ── HUD overlay ────────────────────────────────────
             hud.beginFrame();
@@ -128,6 +164,8 @@ int main() {
 
             win.swapAndPoll();
         }
+
+        glDeleteQueries(1, &gpuQuery);
     } catch (const std::exception& e) {
         std::cerr << "Fatal: " << e.what() << '\n';
         return 1;

@@ -19,6 +19,7 @@ public:
     float pitch()         const { return m_pitch; }
     float nearPlane()     const { return m_near; }
     float farPlane()      const { return m_far; }
+    float fov()           const { return m_fov; }
 
     float moveSpeed        = 5.0f;
     float mouseSensitivity = 0.1f;
