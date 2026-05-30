@@ -28,8 +28,8 @@ void main() {
         FragColor = vec4(normalize(vNormal) * 0.5 + 0.5, 1.0);
 
     } else if (uViewMode == 5) {
-        // World-space position — fract tiles every 1m, each axis → R,G,B
-        FragColor = vec4(fract(abs(vFragPos)), 1.0);
+        // Global world-space position: origin = mid-grey, ±5m = 0/1 per channel
+        FragColor = vec4(clamp(vFragPos * 0.1 + 0.5, 0.0, 1.0), 1.0);
 
     } else if (uViewMode == 6) {
         // UV coordinates as RG gradient
