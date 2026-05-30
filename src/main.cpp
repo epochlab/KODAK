@@ -13,6 +13,7 @@
 #include "texture.hpp"
 #include "hud.hpp"
 #include "frustum.hpp"
+#include "model.hpp"
 
 static Camera* g_camera = nullptr;
 
@@ -105,12 +106,7 @@ int main() {
 
         HUD hud(win.handle());
 
-        Texture checker("assets/textures/checker.png");
-        Texture white = Texture::white();
-
-        Mesh cube   = Mesh::cube();
-        Mesh sphere = Mesh::sphere(16, 16);
-        Mesh ground = Mesh::plane(10.0f);
+        Model rock = Model::loadGLTF("assets/geo/rock_shopk_gltf_high/Rock_shopk_High.gltf");
 
         // Empty VAO for fullscreen blit (no VBO — blit.vert uses gl_VertexID)
         GLuint blitVAO = 0;
@@ -172,7 +168,7 @@ int main() {
             glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
             glViewport(0, 0, win.width(), win.height());
             glEnable(GL_DEPTH_TEST);
-            glClearColor(0.08f, 0.10f, 0.14f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glPolygonMode(GL_FRONT_AND_BACK, viewMode == 2 ? GL_LINE : GL_FILL);
 
@@ -188,37 +184,25 @@ int main() {
             shader.set("uNear",       camera.nearPlane());
             shader.set("uFar",        camera.farPlane());
 
-            // Build the per-frame draw list.
-            float angle = static_cast<float>(glfwGetTime()) * 40.0f;
-            struct DrawItem { const Mesh* mesh; glm::mat4 model; const Texture* tex; };
-            const DrawItem items[] = {
-                { &cube,   glm::rotate(glm::mat4(1.0f), glm::radians(angle), {0.0f, 1.0f, 0.0f}), &checker },
-                { &sphere, glm::translate(glm::mat4(1.0f), {2.5f, 0.0f, -1.0f}),                  &checker },
-                { &ground, glm::translate(glm::mat4(1.0f), {0.0f, -0.5f, 0.0f}),                  &white   },
-            };
+            // Scene: rock model only.
+            const glm::mat4 mRock = rock.transform();
 
             Frustum frustum;
             frustum.update(proj * view);
 
             glBeginQuery(GL_TIME_ELAPSED, gpuQueries[queryWrite]);
 
-            int drawn = 0;
-            for (const DrawItem& it : items) {
-                // World-space bounding sphere (no scaling in these transforms).
-                glm::vec3 centre = glm::vec3(it.model[3]);
-                if (!frustum.testSphere(centre, it.mesh->boundingRadius()))
-                    continue;
-                it.tex->bind(0);
-                shader.set("uModel", it.model);
-                it.mesh->draw();
+            int drawn = 0, total = 1;
+
+            glm::vec3 rockCentre = glm::vec3(mRock * glm::vec4(rock.centre(), 1.0f));
+            if (frustum.testSphere(rockCentre, rock.boundingRadius())) {
+                rock.draw(shader, mRock);
                 ++drawn;
             }
 
             glEndQuery(GL_TIME_ELAPSED);
             queryStarted[queryWrite] = true;
             queryWrite = (queryWrite + 1) % GPU_QUERY_FRAMES;
-
-            const int numItems = static_cast<int>(sizeof(items) / sizeof(items[0]));
 
             // ── Blit FBO → screen ──────────────────────────────────
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -243,14 +227,12 @@ int main() {
             stats.frameTimeMs    = dt * 1000.0f;
             stats.frameCap       = FRAME_CAP;
             stats.memMB          = queryMemoryMB();
-            stats.gpuAllocMB     = static_cast<float>(
-                cube.gpuBytes() + sphere.gpuBytes() + ground.gpuBytes() + rt.bytes())
-                / (1024.0f * 1024.0f);
-            stats.drawCalls      = drawn;
-            stats.drawCallsTotal = numItems;
-            stats.drawCallsCulled = numItems - drawn;
-            stats.totalTriangles = cube.triangleCount() + sphere.triangleCount() + ground.triangleCount();
-            stats.totalVertices  = cube.indexCount()    + sphere.indexCount()    + ground.indexCount();
+            stats.gpuAllocMB      = static_cast<float>(rt.bytes()) / (1024.0f * 1024.0f);
+            stats.drawCalls       = drawn;
+            stats.drawCallsTotal  = total;
+            stats.drawCallsCulled = total - drawn;
+            stats.totalTriangles  = rock.triangleCount();
+            stats.totalVertices   = rock.vertexCount();
             stats.width          = win.width();
             stats.height         = win.height();
             stats.renderScale    = RENDER_SCALE;
@@ -266,10 +248,8 @@ int main() {
             stats.camFar             = camera.farPlane();
             stats.viewMode           = viewMode;
             stats.viewModeName       = ::viewModeName(viewMode);
-            stats.numObjects         = 3;
-            stats.objects[0]         = {"cube",   cube.triangleCount(),   cube.indexCount()};
-            stats.objects[1]         = {"sphere", sphere.triangleCount(), sphere.indexCount()};
-            stats.objects[2]         = {"ground", ground.triangleCount(), ground.indexCount()};
+            stats.numObjects = 1;
+            stats.objects[0] = {"rock", rock.triangleCount(), rock.vertexCount()};
 
             // ── HUD overlay ────────────────────────────────────────
             hud.beginFrame();

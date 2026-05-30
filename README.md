@@ -4,7 +4,7 @@ A 3D render engine built from scratch in C++ with OpenGL.
 
 ## Status
 
-**Milestone 4 — Optimisation: FPS · Memory · Speed** ✓ done — **Milestone 5 — glTF Geometry Loading** next
+**Milestone 5 — glTF Geometry Loading** (in progress)
 
 ## Requirements
 
@@ -60,6 +60,7 @@ Fetched automatically by CMake:
 | [GLFW](https://www.glfw.org) | 3.4 | Window + OpenGL context + input |
 | [GLM](https://github.com/g-truc/glm) | 1.0.1 | Math (vectors, matrices) |
 | [Dear ImGui](https://github.com/ocornut/imgui) | 1.91.9 | Debug HUD overlay |
+| [cgltf](https://github.com/jkuhlmann/cgltf) | 1.14 | glTF 2.0 parsing (header-only) |
 
 OpenGL and stb_image are provided by the macOS system framework and committed header respectively.
 
@@ -74,7 +75,9 @@ src/
 ├── mesh.hpp/.cpp   — VAO/VBO/EBO geometry, cube/plane/sphere factories
 ├── texture.hpp/.cpp— PNG/JPG/TGA loading via stb_image
 ├── hud.hpp/.cpp    — Dear ImGui overlay, FrameStats
-└── frustum.hpp     — Gribb-Hartmann frustum planes, sphere/AABB culling tests
+├── frustum.hpp     — Gribb-Hartmann frustum planes, sphere/AABB culling tests
+├── model.hpp/.cpp  — glTF 2.0 loader (cgltf), Model/SubMesh, node transform walk
+└── cgltf_impl.cpp  — cgltf single-header implementation unit
 shaders/
 ├── basic.vert/frag — MVP transform, 6 view modes
 └── blit.vert/frag  — fullscreen upscale blit
@@ -88,7 +91,7 @@ shaders/
 | 2 | Texture Loading — stb_image, UV coords, Mesh::sphere() | ✓ done |
 | 3 | Debug HUD — Dear ImGui overlay, 6 view modes, FBO render scale | ✓ done |
 | 4 | Optimisation — smooth FPS, non-stalling GPU timer, GPU-mem tracking, uniform batching, frustum culling | ✓ done |
-| 5 | Geometry Loading — glTF 2.0 (cgltf): meshes, materials, textures, scene hierarchy | next |
+| 5 | Geometry Loading — glTF 2.0 (cgltf): meshes, materials, textures, scene hierarchy | in progress |
 | 6 | HDRI Skydome — equirectangular HDR sky, HDRI-driven ambient | planned |
 | 7 | PBR Shader / Material System — Cook-Torrance BRDF, IBL | planned |
 | 8 | Camera & Lens Effects — HDR framebuffer, tone mapping, bloom, DoF | planned |

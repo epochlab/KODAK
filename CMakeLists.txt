@@ -35,6 +35,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
+FetchContent_Declare(
+    cgltf
+    GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
+    GIT_TAG        v1.14
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(cgltf)
+
 add_library(imgui_lib STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -58,10 +66,12 @@ add_executable(renderer
     src/mesh.cpp
     src/texture.cpp
     src/hud.cpp
+    src/model.cpp
+    src/cgltf_impl.cpp
     external/stb/stb_image.cpp
 )
 
-target_include_directories(renderer PRIVATE src external/stb)
+target_include_directories(renderer PRIVATE src external/stb ${cgltf_SOURCE_DIR})
 
 target_compile_definitions(renderer PRIVATE
     GL_SILENCE_DEPRECATION

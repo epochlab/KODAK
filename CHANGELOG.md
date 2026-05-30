@@ -4,6 +4,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — Milestone 5: glTF Geometry Loading
+
+- Load glTF 2.0 files via cgltf v1.14 (header-only, MIT): parse + buffer load + validate
+- New `Model` class: walks scene node hierarchy, accumulates transforms, builds `Mesh` per primitive
+- Loads albedo from `baseColorTexture`; normal + ORM paths stored for M7 PBR (not yet bound)
+- Replaces toy cube + sphere with Megascans rock asset (~13 886 tris, 4K albedo texture)
+- Background cleared to black; ground plane removed
+- `assets/geo/` added to `.gitignore` (large binary assets, ~47 MB)
+
+---
+
 ## [M4 — Optimisation: FPS · Memory · Speed] — 2026-05-30
 
 - FPS: raw headline + EMA smooth "avg" secondary line; frame-time min/max over the 128-frame window
