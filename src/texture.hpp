@@ -4,7 +4,8 @@
 
 class Texture {
 public:
-    explicit Texture(const std::string& path);
+    explicit Texture(const std::string& path,
+                     GLenum wrapMode = GL_CLAMP_TO_EDGE);
     ~Texture();
 
     Texture(const Texture&) = delete;
