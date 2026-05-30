@@ -86,8 +86,9 @@ shaders/
 | 1 | Hello 3D World — window, camera, primitives, diffuse shading | ✓ done |
 | 2 | Texture Loading — stb_image, UV coords, Mesh::sphere() | ✓ done |
 | 3 | Debug HUD — Dear ImGui overlay, 6 view modes, FBO render scale | in progress |
-| 4 | Geometry Loading — OBJ (tinyobjloader) + glTF 2.0 (cgltf) | planned |
-| 5 | HDRI Skydome — equirectangular HDR sky, HDRI-driven ambient | planned |
-| 6 | PBR Shader / Material System — Cook-Torrance BRDF, IBL | planned |
-| 7 | Camera & Lens Effects — HDR framebuffer, tone mapping, bloom, DoF | planned |
-| 8 | Advanced — OpenEXR I/O, Alembic geometry caches | planned |
+| 4 | Optimisation & FPS — frame pacing, GPU profiling, draw call efficiency | next |
+| 5 | Geometry Loading — OBJ (tinyobjloader) + glTF 2.0 (cgltf) | planned |
+| 6 | HDRI Skydome — equirectangular HDR sky, HDRI-driven ambient | planned |
+| 7 | PBR Shader / Material System — Cook-Torrance BRDF, IBL | planned |
+| 8 | Camera & Lens Effects — HDR framebuffer, tone mapping, bloom, DoF | planned |
+| 9 | Advanced — OpenEXR I/O, Alembic geometry caches | planned |

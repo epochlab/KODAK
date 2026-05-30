@@ -23,8 +23,11 @@ struct FrameStats {
     int       fpsHistoryOffset = 0;
 
     // Viewport
-    int       width           = 0;
+    int       width           = 0;   // physical framebuffer (render resolution)
     int       height          = 0;
+    int       logicalWidth    = 0;   // logical window size (on-screen pixels)
+    int       logicalHeight   = 0;
+    int       renderScale     = 1;
 
     // Scene geometry
     int       drawCalls       = 0;

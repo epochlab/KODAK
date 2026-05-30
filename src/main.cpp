@@ -213,6 +213,9 @@ int main() {
             stats.totalVertices  = cube.indexCount()    + sphere.indexCount()    + ground.indexCount();
             stats.width          = win.width();
             stats.height         = win.height();
+            stats.renderScale    = RENDER_SCALE;
+            { int lw, lh; glfwGetWindowSize(win.handle(), &lw, &lh);
+              stats.logicalWidth = lw; stats.logicalHeight = lh; }
             stats.camPos             = camera.position();
             stats.camRotX            = camera.pitch();
             stats.camRotY            = camera.yaw();
