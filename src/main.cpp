@@ -8,6 +8,7 @@
 #include "camera.hpp"
 #include "mesh.hpp"
 #include "texture.hpp"
+#include "hud.hpp"
 
 static Camera* g_camera = nullptr;
 
@@ -23,10 +24,12 @@ int main() {
 
         Shader shader("shaders/basic.vert", "shaders/basic.frag");
         shader.use();
-        shader.set("uAlbedo", 0);  // texture unit 0
+        shader.set("uAlbedo", 0);
 
         Camera camera({0.0f, 1.5f, 6.0f}, win.aspectRatio());
         g_camera = &camera;
+
+        HUD hud(win.handle());
 
         Texture checker("assets/textures/checker.png");
         Texture white = Texture::white();
@@ -35,6 +38,7 @@ int main() {
         Mesh sphere = Mesh::sphere();
         Mesh ground = Mesh::plane(14.0f);
 
+        FrameStats stats{};
         double lastTime = glfwGetTime();
 
         while (!win.shouldClose()) {
@@ -48,6 +52,7 @@ int main() {
             camera.setAspect(win.aspectRatio());
             camera.processInput(win.handle(), dt);
 
+            // ── Draw scene ─────────────────────────────────────
             glClearColor(0.08f, 0.10f, 0.14f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -55,24 +60,38 @@ int main() {
             shader.set("uView",       camera.viewMatrix());
             shader.set("uProjection", camera.projectionMatrix());
 
-            // Cube: spinning at origin, checker texture
             float angle = static_cast<float>(glfwGetTime()) * 40.0f;
             glm::mat4 mCube = glm::rotate(glm::mat4(1.0f), glm::radians(angle), {0.0f, 1.0f, 0.0f});
             checker.bind(0);
             shader.set("uModel", mCube);
             cube.draw();
 
-            // Sphere: offset right, checker texture
             glm::mat4 mSphere = glm::translate(glm::mat4(1.0f), {2.5f, 0.0f, -1.0f});
             checker.bind(0);
             shader.set("uModel", mSphere);
             sphere.draw();
 
-            // Ground: white (tiled UVs will tile the white pixel cleanly)
             glm::mat4 mGround = glm::translate(glm::mat4(1.0f), {0.0f, -0.5f, 0.0f});
             white.bind(0);
             shader.set("uModel", mGround);
             ground.draw();
+
+            // ── Collect stats ──────────────────────────────────
+            stats.fps           = (dt > 0.0f) ? 1.0f / dt : 0.0f;
+            stats.frameTimeMs   = dt * 1000.0f;
+            stats.drawCalls     = 3;
+            stats.totalTriangles = cube.triangleCount() + sphere.triangleCount() + ground.triangleCount();
+            stats.totalVertices  = cube.indexCount()    + sphere.indexCount()    + ground.indexCount();
+            stats.width          = win.width();
+            stats.height         = win.height();
+            stats.camPos         = camera.position();
+            stats.camYaw         = camera.yaw();
+            stats.camPitch       = camera.pitch();
+
+            // ── HUD overlay ────────────────────────────────────
+            hud.beginFrame();
+            hud.draw(stats);
+            hud.endFrame();
 
             win.swapAndPoll();
         }

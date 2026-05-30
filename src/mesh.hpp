@@ -19,6 +19,8 @@ public:
     Mesh& operator=(Mesh&& other) noexcept;
 
     void draw() const;
+    int triangleCount() const { return m_indexCount / 3; }
+    int indexCount()    const { return m_indexCount; }
 
     static Mesh cube();
     static Mesh plane(float size = 10.0f);

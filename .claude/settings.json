@@ -14,8 +14,6 @@
       "Bash(clang-format:*)",
       "Bash(git:*)"
     ],
-    "deny": [
-      "Bash(git push:*)"
-    ]
+    "deny": []
   }
 }

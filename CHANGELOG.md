@@ -5,7 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] — Milestone 2: Texture Loading
+## [Unreleased] — Milestone 3: Debug HUD
+
+### Added
+- `HUD` class: Dear ImGui lifecycle (init, per-frame, shutdown) with OpenGL 3.3 + GLFW backends
+- `FrameStats` struct: FPS, frame time, draw call count, triangle/vertex totals, viewport dimensions, camera state
+- Semi-transparent overlay (top-left): FPS + frame time graph, resolution, geometry stats, camera position/yaw/pitch
+- `Mesh::triangleCount()` and `Mesh::indexCount()` accessors
+- `Camera::position()`, `Camera::yaw()`, `Camera::pitch()` getters
+- Dear ImGui v1.91.9 via CMake FetchContent; compiled as `imgui_lib` static library
+
+---
+
+## [M2 — Texture Loading] — 2026-05-30
 
 ### Added
 - `Texture` class: load PNG/JPG/TGA via `stb_image`, upload to GL, mipmaps, repeat wrapping, linear-mip filtering; `Texture::white()` factory for untextured objects
