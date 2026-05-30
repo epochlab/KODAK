@@ -21,9 +21,10 @@ static const char* viewModeName(int m) {
     switch (m) {
         case 1: return "Diffuse";
         case 2: return "Wireframe";
-        case 3: return "Normals";
-        case 4: return "Depth";
-        case 5: return "UV";
+        case 3: return "Depth";
+        case 4: return "Normals";
+        case 5: return "Position";
+        case 6: return "UV";
         default: return "Unknown";
     }
 }
@@ -66,7 +67,7 @@ int main() {
 
         FrameStats stats{};
         int  viewMode    = 1;
-        bool prevKeys[5] = {};
+        bool prevKeys[6] = {};
         double lastTime  = glfwGetTime();
 
         while (!win.shouldClose()) {
@@ -78,10 +79,10 @@ int main() {
                 glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
 
             // ── View mode keys ─────────────────────────────────
-            static const int viewKeys[5] = {
-                GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5
+            static const int viewKeys[6] = {
+                GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6
             };
-            for (int i = 0; i < 5; ++i) {
+            for (int i = 0; i < 6; ++i) {
                 bool down = glfwGetKey(win.handle(), viewKeys[i]) == GLFW_PRESS;
                 if (down && !prevKeys[i]) viewMode = i + 1;
                 prevKeys[i] = down;

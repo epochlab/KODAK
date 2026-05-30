@@ -6,10 +6,10 @@ class Camera {
 public:
     // filmbackMm: sensor width (36mm = full-frame). focalLengthMm: e.g. 50mm.
     Camera(glm::vec3 position, float aspect,
-           float filmbackMm    = 36.0f,
-           float focalLengthMm = 31.2f,
+           float filmbackMm    = 35.0f,
+           float focalLengthMm = 50.0f,
            float near          = 0.1f,
-           float far           = 10.0f);
+           float far           = 100.0f);
 
     glm::mat4 viewMatrix()       const;
     glm::mat4 projectionMatrix() const;

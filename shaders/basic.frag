@@ -5,7 +5,7 @@ in vec3 vFragPos;
 in vec2 vUV;
 
 uniform sampler2D uAlbedo;
-uniform int       uViewMode;  // 1=diffuse 2=wireframe 3=normals 4=depth 5=uv
+uniform int       uViewMode;  // 1=diffuse 2=wireframe 3=depth 4=normals 5=position 6=uv
 uniform float     uNear;
 uniform float     uFar;
 
@@ -17,17 +17,21 @@ void main() {
         FragColor = vec4(0.35, 0.85, 1.0, 1.0);
 
     } else if (uViewMode == 3) {
-        // World-space normals → RGB
-        FragColor = vec4(normalize(vNormal) * 0.5 + 0.5, 1.0);
-
-    } else if (uViewMode == 4) {
         // Linearised depth, normalised to [0,1]
         float z  = gl_FragCoord.z * 2.0 - 1.0;
         float ld = (2.0 * uNear * uFar) / (uFar + uNear - z * (uFar - uNear));
         float d  = (ld - uNear) / (uFar - uNear);
         FragColor = vec4(d, d, d, 1.0);
 
+    } else if (uViewMode == 4) {
+        // World-space normals → RGB
+        FragColor = vec4(normalize(vNormal) * 0.5 + 0.5, 1.0);
+
     } else if (uViewMode == 5) {
+        // World-space position — fract tiles every 1m, each axis → R,G,B
+        FragColor = vec4(fract(abs(vFragPos)), 1.0);
+
+    } else if (uViewMode == 6) {
         // UV coordinates as RG gradient
         FragColor = vec4(vUV, 0.0, 1.0);
 
