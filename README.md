@@ -19,7 +19,7 @@ Output: `build/dev/renderer`
 Run from the **project root** (shaders load relative to the working directory):
 
 ```bash
-./build/dev/renderer
+./build/dev/KODAK
 ```
 
 ## Controls
