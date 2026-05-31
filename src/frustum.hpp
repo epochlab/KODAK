@@ -36,17 +36,4 @@ struct Frustum {
         return true;
     }
 
-    // True if the axis-aligned box is at least partially inside the frustum.
-    bool testAABB(glm::vec3 mn, glm::vec3 mx) const {
-        for (const auto& p : planes) {
-            const glm::vec3 n(p);
-            // Positive vertex: the box corner furthest along the plane normal.
-            glm::vec3 pv{ n.x >= 0.0f ? mx.x : mn.x,
-                         n.y >= 0.0f ? mx.y : mn.y,
-                         n.z >= 0.0f ? mx.z : mn.z };
-            if (glm::dot(n, pv) + p.w < 0.0f)
-                return false;
-        }
-        return true;
-    }
 };

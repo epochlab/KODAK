@@ -16,6 +16,8 @@ struct AppConfig {
     struct Render {
         int scale      = 2;
         int iblSamples = 16;
+        int width      = 2048;
+        int height     = 1152;
     } render;
 
     struct Hdri {

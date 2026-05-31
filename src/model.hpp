@@ -25,7 +25,6 @@ public:
     glm::vec3        centre()         const { return m_centre; }
     int              triangleCount()  const;
     int              vertexCount()    const;
-    int              submeshCount()   const { return static_cast<int>(m_submeshes.size()); }
 
     Model(const Model&)            = delete;
     Model& operator=(const Model&) = delete;

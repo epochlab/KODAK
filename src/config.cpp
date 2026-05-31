@@ -48,8 +48,10 @@ AppConfig loadConfig(const std::string& path) {
 
     if (j.contains("render")) {
         const auto& r = j["render"];
-        cfg.render.scale      = ji(r.value("scale",      json(2)),  cfg.render.scale);
-        cfg.render.iblSamples = ji(r.value("iblSamples", json(16)), cfg.render.iblSamples);
+        cfg.render.scale      = ji(r.value("scale",      json(2)),    cfg.render.scale);
+        cfg.render.iblSamples = ji(r.value("iblSamples", json(16)),   cfg.render.iblSamples);
+        cfg.render.width      = ji(r.value("width",      json(2048)), cfg.render.width);
+        cfg.render.height     = ji(r.value("height",     json(1152)), cfg.render.height);
     }
 
     if (j.contains("hdri")) {
@@ -81,7 +83,8 @@ void saveConfig(const AppConfig& cfg, const std::string& path) {
         {"filmback",    cfg.camera.filmback},
         {"focalLength", cfg.camera.focalLength}
     };
-    j["render"] = {{"scale", cfg.render.scale}, {"iblSamples", cfg.render.iblSamples}};
+    j["render"] = {{"scale", cfg.render.scale}, {"iblSamples", cfg.render.iblSamples},
+                   {"width", cfg.render.width}, {"height", cfg.render.height}};
     j["hdri"] = {
         {"path",     cfg.hdri.path},
         {"rotation", {cfg.hdri.rotation.x, cfg.hdri.rotation.y, cfg.hdri.rotation.z}},

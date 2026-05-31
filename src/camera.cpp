@@ -45,15 +45,27 @@ void Camera::setPitch(float deg) {
     m_pitch = std::clamp(deg, -89.0f, 89.0f);
 }
 
+void Camera::setPivot(glm::vec3 pivot) {
+    m_pivot = pivot;
+}
+
+void Camera::beginOrbit() {
+    m_orbiting   = true;
+    m_firstMouse = true;
+}
+
+void Camera::endOrbit() {
+    m_orbiting = false;
+}
+
 void Camera::processInput(GLFWwindow* window, float dt) {
-    float spd   = moveSpeed * dt;
+    float spd = moveSpeed * dt;
     glm::vec3 f = front();
     glm::vec3 r = glm::normalize(glm::cross(f, glm::vec3{0, 1, 0}));
-
-    if (glfwGetKey(window, GLFW_KEY_W)           == GLFW_PRESS) m_pos += f * spd;
-    if (glfwGetKey(window, GLFW_KEY_S)           == GLFW_PRESS) m_pos -= f * spd;
-    if (glfwGetKey(window, GLFW_KEY_A)           == GLFW_PRESS) m_pos -= r * spd;
-    if (glfwGetKey(window, GLFW_KEY_D)           == GLFW_PRESS) m_pos += r * spd;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) m_pos += f * spd;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) m_pos -= f * spd;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) m_pos -= r * spd;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) m_pos += r * spd;
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) m_pos.y += spd;
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) m_pos.y -= spd;
 }
@@ -69,6 +81,27 @@ void Camera::processMouseMove(double xpos, double ypos) {
     float dy = -static_cast<float>(ypos - m_lastY) * mouseSensitivity;
     m_lastX = xpos;
     m_lastY = ypos;
-    m_yaw   += dx;
-    m_pitch  = std::clamp(m_pitch + dy, -89.0f, 89.0f);
+    if (!m_orbiting) return;
+
+    glm::vec3 offset = m_pos - m_pivot;
+
+    // Yaw: rotate offset around world Y-axis.
+    offset = glm::vec3(
+        glm::rotate(glm::mat4(1.f), glm::radians(-dx), glm::vec3(0, 1, 0))
+        * glm::vec4(offset, 0.f));
+
+    // Pitch: rotate around local right axis.
+    glm::vec3 right  = glm::normalize(glm::cross(glm::vec3(0, 1, 0), offset));
+    glm::vec3 tilted = glm::vec3(
+        glm::rotate(glm::mat4(1.f), glm::radians(dy), right)
+        * glm::vec4(offset, 0.f));
+    if (std::abs(glm::normalize(tilted).y) < 0.99f)
+        offset = tilted;
+
+    m_pos = m_pivot + offset;
+
+    // Sync yaw/pitch so WASD re-entry reflects the new look direction.
+    glm::vec3 dir = glm::normalize(m_pivot - m_pos);
+    m_pitch = glm::degrees(std::asin(glm::clamp(dir.y, -1.f, 1.f)));
+    m_yaw   = glm::degrees(std::atan2(dir.z, dir.x));
 }

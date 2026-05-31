@@ -26,7 +26,13 @@ public:
     void processMouseMove(double xpos, double ypos);
     void resetMouse() { m_firstMouse = true; }
 
+    // Orbit: LMB press calls setPivot + beginOrbit; release calls endOrbit.
+    void setPivot(glm::vec3 pivot);   // store pivot; does not start orbiting
+    void beginOrbit();                // LMB press: start tumbling
+    void endOrbit();                  // LMB release: stop tumbling
+
     glm::vec3 position()      const { return m_pos; }
+    glm::vec3 front()         const;
     float     yaw()           const { return m_yaw; }
     float     pitch()         const { return m_pitch; }
     float     nearPlane()     const { return m_near; }
@@ -34,7 +40,7 @@ public:
     float     filmback()      const { return m_filmbackMm; }
     float     focalLength()   const { return m_focalLengthMm; }
 
-    float moveSpeed        = 5.0f;
+    float moveSpeed        = 2.5f;
     float mouseSensitivity = 0.05f;
 
 private:
@@ -48,5 +54,6 @@ private:
     bool   m_firstMouse = true;
     double m_lastX = 0.0, m_lastY = 0.0;
 
-    glm::vec3 front() const;
+    glm::vec3 m_pivot    {0.f, 0.f, 0.f};
+    bool      m_orbiting = false;
 };

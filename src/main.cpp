@@ -22,12 +22,10 @@
 #include "model.hpp"
 #include "config.hpp"
 
-static Camera* g_camera      = nullptr;
-static bool    g_mouseEnabled = false;
+static Camera* g_camera = nullptr;
 
 static void onMouseMove(GLFWwindow*, double xpos, double ypos) {
-    if (g_mouseEnabled && g_camera)
-        g_camera->processMouseMove(xpos, ypos);
+    if (g_camera) g_camera->processMouseMove(xpos, ypos);
 }
 
 static const char* viewModeName(int m) {
@@ -129,11 +127,12 @@ struct SsaoTarget {
 
 int main() {
     try {
-        constexpr int BASE_W    = 2048, BASE_H = 1152;
         constexpr int FRAME_CAP = 0;  // 0 = vsync/unlimited
 
         AppConfig cfg = loadConfig("profile.json");
-        const int renderScale = cfg.render.scale > 0 ? cfg.render.scale : 2;
+        const int BASE_W      = cfg.render.width  > 0 ? cfg.render.width  : 2048;
+        const int BASE_H      = cfg.render.height > 0 ? cfg.render.height : 1152;
+        const int renderScale = cfg.render.scale  > 0 ? cfg.render.scale  : 2;
 
         Window win(BASE_W / renderScale, BASE_H / renderScale, "BOUNCE");
         glfwSetCursorPosCallback(win.handle(), onMouseMove);
@@ -236,7 +235,7 @@ int main() {
         FrameStats stats{};
         int    viewMode    = 1;
         bool   prevKeys[10] = {};
-        bool   prevSpace  = false;
+        bool   prevLMB    = false;
         bool   prevH      = false;
         bool   prevK      = false;
         bool   prevJ      = false;
@@ -252,6 +251,8 @@ int main() {
 
         bool skyVisible = cfg.hdri.visible;
 
+        glm::mat4 lastView(1.f), lastProj(1.f);
+
         glm::mat4 sceneRot(1.0f);
         sceneRot = glm::rotate(sceneRot, glm::radians(cfg.scene.rotation.x), glm::vec3(1,0,0));
         sceneRot = glm::rotate(sceneRot, glm::radians(cfg.scene.rotation.y), glm::vec3(0,1,0));
@@ -265,18 +266,36 @@ int main() {
             if (glfwGetKey(win.handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
 
-            // ── Space: hold to enable mouse look ──────────────────
-            bool spaceNow = glfwGetKey(win.handle(), GLFW_KEY_SPACE) == GLFW_PRESS;
-            if (spaceNow && !prevSpace) {
-                g_mouseEnabled = true;
+            // ── LMB: sample pivot at screen centre, then orbit ────────
+            bool lmbNow = glfwGetMouseButton(win.handle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+            if (lmbNow && !prevLMB) {
+                int px = BASE_W / 2;
+                int py = BASE_H / 2;
+
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, rt.fbo);
+                float depth = 1.0f;
+                glReadPixels(px, py, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+                glm::vec3 newPivot;
+                if (depth < 1.0f) {
+                    float ndcX = (float(px) / BASE_W) * 2.f - 1.f;
+                    float ndcY = (float(py) / BASE_H) * 2.f - 1.f;
+                    float ndcZ = depth * 2.f - 1.f;
+                    glm::vec4 worldPos = glm::inverse(lastProj * lastView) * glm::vec4(ndcX, ndcY, ndcZ, 1.f);
+                    newPivot = glm::vec3(worldPos) / worldPos.w;
+                } else {
+                    newPivot = camera.position() + 3.f * camera.front();
+                }
+                camera.setPivot(newPivot);
+                camera.beginOrbit();
                 glfwSetInputMode(win.handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                camera.resetMouse();
             }
-            if (!spaceNow && prevSpace) {
-                g_mouseEnabled = false;
+            if (!lmbNow && prevLMB) {
+                camera.endOrbit();
                 glfwSetInputMode(win.handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
-            prevSpace = spaceNow;
+            prevLMB = lmbNow;
 
             // ── H: toggle HUD ─────────────────────────────────────
             bool hNow = glfwGetKey(win.handle(), GLFW_KEY_H) == GLFW_PRESS;
@@ -350,10 +369,11 @@ int main() {
                 }
             }
 
-            // Cache matrices.
             const glm::mat4 view = camera.viewMatrix();
             const glm::mat4 proj = camera.projectionMatrix();
             const glm::mat4 invProj = glm::inverse(proj);
+            lastView = view;
+            lastProj = proj;
 
             // ── Geometry pass → G-buffer FBO ──────────────────────
             glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
@@ -454,7 +474,7 @@ int main() {
             stats.memMB         = queryMemoryMB();
             stats.gpuAllocMB    = static_cast<float>(rt.bytes()) / (1024.0f * 1024.0f);
             stats.drawCalls     = drawn;
-            stats.drawCallsTotal= total;
+            stats.drawCallsTotal  = total;
             stats.drawCallsCulled = total - drawn;
             stats.totalTriangles  = rock.triangleCount();
             stats.totalVertices   = rock.vertexCount();
@@ -468,7 +488,7 @@ int main() {
             stats.camRotY         = camera.yaw();
             stats.camRotZ         = 0.0f;
             stats.camFilmbackMm   = camera.filmback();
-            stats.camFocalLengthMm= camera.focalLength();
+            stats.camFocalLengthMm = camera.focalLength();
             stats.camNear         = camera.nearPlane();
             stats.camFar          = camera.farPlane();
             stats.viewMode        = viewMode;
