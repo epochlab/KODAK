@@ -25,10 +25,6 @@ public:
     int    indexCount()     const { return m_indexCount; }
     float  boundingRadius() const { return m_boundingRadius; }   // model space, origin-centred
 
-    static Mesh cube();
-    static Mesh plane(float size = 10.0f);
-    static Mesh sphere(int stacks = 32, int slices = 32);
-
 private:
     GLuint  m_vao, m_vbo, m_ebo;
     GLsizei m_indexCount;
