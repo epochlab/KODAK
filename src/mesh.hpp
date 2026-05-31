@@ -7,6 +7,7 @@ struct Vertex {
     float x, y, z;
     float nx, ny, nz;
     float u, v;
+    float tx, ty, tz, tw;  // tangent + handedness (glTF vec4)
 };
 
 class Mesh {

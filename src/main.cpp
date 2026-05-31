@@ -32,7 +32,8 @@ static const char* viewModeName(int m) {
         case 3:  return "Alpha";         case 4:  return "Depth";
         case 5:  return "Position";      case 6:  return "Normals";
         case 7:  return "UV";            case 8:  return "Albedo";
-        case 9:  return "Direct Diffuse"; case 10: return "AO";
+        case 9:  return "Direct Diffuse";   case 10: return "AO";
+        case 11: return "Direct Reflection"; case 12: return "Shading Normal";
         default: return "Unknown";
     }
 }
@@ -143,6 +144,7 @@ int main() {
         shader.use();
         shader.set("uAlbedo",     0);
         shader.set("uSkyHDR",     1);
+        shader.set("uNormalMap",  2);
         shader.set("uIblSamples", cfg.render.iblSamples);
 
         Shader blitShader("shaders/blit.vert", "shaders/blit.frag");
@@ -232,7 +234,6 @@ int main() {
 
         FrameStats stats{};
         int    viewMode    = 1;
-        bool   prevKeys[10] = {};
         bool   prevLMB    = false;
         bool   prevH      = false;
         bool   prevK      = false;
@@ -342,17 +343,6 @@ int main() {
             if (bNow && !prevB) skyVisible = !skyVisible;
             prevB = bNow;
 
-            // ── View mode keys 1–9 + 0 (mode 10 = AO) ───────────
-            static const int viewKeys[10] = {
-                GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4, GLFW_KEY_5,
-                GLFW_KEY_6, GLFW_KEY_7, GLFW_KEY_8, GLFW_KEY_9, GLFW_KEY_0
-            };
-            for (int i = 0; i < 10; ++i) {
-                bool down = glfwGetKey(win.handle(), viewKeys[i]) == GLFW_PRESS;
-                if (down && !prevKeys[i]) viewMode = i + 1;
-                prevKeys[i] = down;
-            }
-
             camera.setAspect(win.aspectRatio());
             camera.processInput(win.handle(), dt);
 
@@ -389,6 +379,7 @@ int main() {
             shader.set("uFar",             camera.farPlane());
             shader.set("uHdriExposure",    cfg.hdri.exposure);
             shader.set("uHdriRot",         hdriRotRad);
+            shader.set("uCamPos",          camera.position());
 
             const glm::mat4 mRock = sceneRot * rock.transform();
             Frustum frustum;
@@ -498,6 +489,7 @@ int main() {
                 hud.beginFrame();
                 hud.draw(stats);
                 hud.endFrame();
+                viewMode = stats.viewMode;  // pick up any change from the dropdown
             }
 
             win.swapAndPoll();

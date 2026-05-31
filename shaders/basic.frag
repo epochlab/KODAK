@@ -2,17 +2,22 @@
 
 in vec3 vNormal;
 in vec3 vNormalVS;
+in vec3 vTangent;
+in vec3 vBitangent;
 in vec3 vFragPos;
 in vec2 vUV;
 
 uniform sampler2D uAlbedo;
-uniform sampler2D uSkyHDR;          // equirectangular HDRI for diffuse irradiance
-uniform int       uViewMode;        // 1=beauty 2=wire 3=alpha 4=depth 5=pos 6=normals 7=uv 8=albedo 9=direct_diffuse 10=ao
+uniform sampler2D uSkyHDR;     // equirectangular HDRI for diffuse irradiance
+uniform sampler2D uNormalMap;  // tangent-space normal map (unit 2)
+uniform int       uViewMode;   // 1=beauty 2=wire 3=alpha 4=depth 5=pos 6=normals 7=uv
+                               // 8=albedo 9=direct_diffuse 10=ao 11=direct_reflection 12=shading_normal
 uniform float     uNear;
 uniform float     uFar;
 uniform float     uHdriExposure;
-uniform vec3      uHdriRot;         // XYZ Euler rotation in radians — must match sky shader
-uniform int       uIblSamples;      // hemisphere sample count (profile.json render.iblSamples)
+uniform vec3      uHdriRot;    // XYZ Euler rotation in radians — must match sky shader
+uniform int       uIblSamples; // hemisphere sample count (profile.json render.iblSamples)
+uniform vec3      uCamPos;     // world-space camera position (for reflection vector)
 
 layout(location = 0) out vec4 gColor;
 layout(location = 1) out vec4 gNormal;  // view-space normals for SSAO
@@ -37,7 +42,6 @@ vec3 sampleEnvDir(vec3 dir) {
 }
 
 // Cosine-weighted Fibonacci hemisphere integration (Lambertian irradiance).
-// Returns avg(L) weighted by cosine; multiply by albedo outside to get final colour.
 vec3 irradianceIBL(vec3 n) {
     vec3 up        = abs(n.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
     vec3 tangent   = normalize(cross(up, n));
@@ -54,6 +58,13 @@ vec3 irradianceIBL(vec3 n) {
         acc += sampleEnvDir(world);
     }
     return acc / float(uIblSamples);
+}
+
+// TBN-perturbed shading normal from normal map.
+vec3 shadingNormal() {
+    vec3 nts = texture(uNormalMap, vUV).rgb * 2.0 - 1.0;
+    mat3 TBN = mat3(normalize(vTangent), normalize(vBitangent), normalize(vNormal));
+    return normalize(TBN * nts);
 }
 
 void main() {
@@ -79,7 +90,7 @@ void main() {
         gColor = vec4(clamp(vFragPos * 0.1 + 0.5, 0.0, 1.0), 1.0);
 
     } else if (uViewMode == 6) {
-        // World-space normals
+        // World-space vertex normals (unperturbed)
         gColor = vec4(normalize(vNormal) * 0.5 + 0.5, 1.0);
 
     } else if (uViewMode == 7) {
@@ -91,13 +102,23 @@ void main() {
         gColor = vec4(texture(uAlbedo, vUV).rgb, 1.0);
 
     } else if (uViewMode == 9) {
-        // Direct Diffuse — HDRI irradiance only, no albedo
-        gColor = vec4(irradianceIBL(normalize(vNormal)), 1.0);
+        // Direct Diffuse — HDRI irradiance using shading normal, no albedo
+        gColor = vec4(irradianceIBL(shadingNormal()), 1.0);
+
+    } else if (uViewMode == 11) {
+        // Direct Reflection — perfect mirror IBL sample from shading normal
+        vec3 viewDir = normalize(uCamPos - vFragPos);
+        vec3 reflDir = reflect(-viewDir, shadingNormal());
+        gColor = vec4(sampleEnvDir(reflDir), 1.0);
+
+    } else if (uViewMode == 12) {
+        // Shading Normal — TBN-perturbed normal visualised as colour
+        gColor = vec4(shadingNormal() * 0.5 + 0.5, 1.0);
 
     } else {
         // Mode 1 (Beauty) and mode 10 (AO, display overridden by blit.frag)
         vec3 albedo     = texture(uAlbedo, vUV).rgb;
-        vec3 irradiance = irradianceIBL(normalize(vNormal));
+        vec3 irradiance = irradianceIBL(shadingNormal());
         gColor = vec4(albedo * irradiance, 1.0);
     }
 }

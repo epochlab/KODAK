@@ -9,8 +9,8 @@
 struct SubMesh {
     Mesh        mesh;
     Texture     albedo;
-    std::string normalPath;  // stored for M7 PBR, not bound yet
-    std::string ormPath;
+    Texture     normalMap;   // tangent-space normal map (unit 2)
+    std::string ormPath;     // ORM path kept for M9b PBR
 };
 
 class Model {

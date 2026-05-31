@@ -17,6 +17,7 @@ public:
     GLuint id() const { return m_id; }
 
     static Texture white();
+    static Texture flatNormal();
 
 private:
     GLuint m_id;

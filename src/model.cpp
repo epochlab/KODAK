@@ -54,12 +54,14 @@ static void walkNodes(const cgltf_node* const* nodes, cgltf_size count,
                 const cgltf_accessor* posAcc  = nullptr;
                 const cgltf_accessor* normAcc = nullptr;
                 const cgltf_accessor* uvAcc   = nullptr;
+                const cgltf_accessor* tanAcc  = nullptr;
 
                 for (cgltf_size ai = 0; ai < prim.attributes_count; ++ai) {
                     const cgltf_attribute& a = prim.attributes[ai];
                     if (a.type == cgltf_attribute_type_position)  posAcc  = a.data;
                     if (a.type == cgltf_attribute_type_normal)    normAcc = a.data;
                     if (a.type == cgltf_attribute_type_texcoord && a.index == 0) uvAcc = a.data;
+                    if (a.type == cgltf_attribute_type_tangent)   tanAcc  = a.data;
                 }
                 if (!posAcc) continue;
 
@@ -80,6 +82,12 @@ static void walkNodes(const cgltf_node* const* nodes, cgltf_size count,
                     if (uvAcc) {
                         verts[vi].u =       readFloat(uvAcc, vi, 0);
                         verts[vi].v = 1.0f - readFloat(uvAcc, vi, 1);  // glTF v=0 is top; GL v=0 is bottom
+                    }
+                    if (tanAcc) {
+                        verts[vi].tx = readFloat(tanAcc, vi, 0);
+                        verts[vi].ty = readFloat(tanAcc, vi, 1);
+                        verts[vi].tz = readFloat(tanAcc, vi, 2);
+                        verts[vi].tw = readFloat(tanAcc, vi, 3);  // handedness
                     }
                 }
 
@@ -106,15 +114,18 @@ static void walkNodes(const cgltf_node* const* nodes, cgltf_size count,
                     normalPath = resolve(mat->normal_texture.texture);
                 }
 
-                // Fall back to white texture if no albedo found.
                 Texture albedo = albedoPath.empty()
                     ? Texture::white()
                     : Texture(albedoPath);
 
+                Texture normalMap = normalPath.empty()
+                    ? Texture::flatNormal()
+                    : Texture(normalPath);
+
                 SubMesh sm{
                     Mesh(verts, indices),
                     std::move(albedo),
-                    normalPath,
+                    std::move(normalMap),
                     ormPath
                 };
                 submeshes.push_back(std::move(sm));
@@ -184,6 +195,7 @@ Model Model::loadGLTF(const std::string& path) {
 void Model::draw(Shader& shader, const glm::mat4& modelMatrix) const {
     for (const SubMesh& sm : m_submeshes) {
         sm.albedo.bind(0);
+        sm.normalMap.bind(2);
         shader.set("uModel", modelMatrix);
         sm.mesh.draw();
     }

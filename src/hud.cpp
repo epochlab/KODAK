@@ -72,7 +72,15 @@ void HUD::draw(FrameStats& s) {
 
     // ── View ──────────────────────────────────────────────────
     sectionHeader("View");
-    ImGui::Text("[%d] %s", s.viewMode, s.viewModeName);
+    static const char* k_modeNames[] = {
+        "Beauty", "Wireframe", "Alpha", "Depth", "Position",
+        "Normals", "UV", "Albedo", "Direct Diffuse", "AO",
+        "Direct Reflection", "Shading Normal"
+    };
+    int modeIdx = s.viewMode - 1;
+    ImGui::SetNextItemWidth(-1.0f);
+    if (ImGui::Combo("##channel", &modeIdx, k_modeNames, 12))
+        s.viewMode = modeIdx + 1;
 
     // ── Frame ─────────────────────────────────────────────────
     sectionHeader("Frame");
