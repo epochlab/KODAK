@@ -4,31 +4,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [GUI & Debug Enhancements] — 2026-05-31
+
+- **Native macOS menu bar** — Cocoa/ObjC++ bridge (`menu_osx.mm`); File → Close; View → Sky Background, Capture, Set JSON, Show Panel (checkmarks stay in sync each frame)
+- **Crosshair** — white `+` always drawn at screen centre via ImGui background draw list, marking the camera orbit pivot sample point
+- **HDRI Y-rotation slider** — 1–360° live spinner in HUD; sky and IBL lighting rotate together
+- **HDRI Flip V** — toggle to flip the equirectangular panorama vertically in both `sky.frag` and `basic.frag`; persisted in `profile.json` as `hdri.flipV`
+- **Fresnel AOV** — remapped from raw RGB to a red (facing) → green (grazing) scalar ramp
+- **HUD layout** — AOV and HDRI sections moved to bottom of panel; "View" section renamed "AOV"
+- **Orbit fix** — `ImGui::WantCaptureMouse` guard prevents camera orbit firing while dragging UI sliders
+- **profile.json** — field ordering fixed; `saveConfig` switched to `nlohmann::ordered_json`
+- **Hotkeys** — H/K/J/B removed; all actions accessible from native menu or HUD; ESC retained
+
+---
+
 ## [PBR BSDF] — 2026-05-31
 
-- **Schlick Fresnel** (`schlickFresnel`) replaces unphysical `mix(specular, diffuse, roughness)` blend; F0 derived from IOR for dielectrics (`((IOR-1)/(IOR+1))²`), from albedo for metals
-- **Energy-conserving BSDF**: `Ld = albedo×(1-F)×(1-metallic)×irradianceIBL`; `Ls = F×reflectionIBL`; beauty = `Ld+Ls`
-- **New uniforms**: `uMetallic` (0=dielectric, 1=metal), `uIOR` (default 1.5 ≈ plastic/glass)
-- **AOV updates**: mode 9 (`direct_diffuse`) and mode 10 (`direct_refl`) now show Fresnel-weighted lobes; mode 13 (`fresnel`) added — raw F term visualised as colour
-- **Config**: `shading.metallic` and `shading.ior` in `profile.json`, `AppConfig`, and `config.cpp`
+- **Schlick Fresnel** with F0 from IOR (dielectrics) or albedo (metals); energy-conserving `Ld + Ls` beauty
+- **New uniforms**: `uMetallic`, `uIOR`; AOV modes 9/10/13 updated; `profile.json` + config extended
 
 ---
 
 ## [Orbit Camera] — 2026-05-31
 
-- LMB depth-sampled pivot orbit; WASD/QE always active; viewport resolution and IBL sample count in profile.json; cosine-weighted Fibonacci diffuse IBL fix; HDRI rotation; B key sky toggle; J key camera save
+- LMB depth-sampled pivot orbit; WASD/QE always active; viewport resolution and IBL sample count in profile.json; cosine-weighted Fibonacci diffuse IBL fix; HDRI rotation; sky and camera save hotkeys
 
 ---
 
 ## [Project Quality] — 2026-05-31
 
-- Renamed BOUNCE; JSON config (profile.json) for all runtime parameters; render scale fix; Z-up correction; SSAO 64-sample + 5×5 blur; 10 view modes; H/K keys for HUD/screenshot
+- JSON config (profile.json); render scale; Z-up correction; SSAO 64-sample + 5×5 blur; 10 view modes
 
 ---
 
 ## [HDRI Skydome] — 2026-05-31
 
-- Equirectangular HDR sky; HDRI diffuse irradiance; FBO upgraded to RGB16F; linear HDR passthrough
+- Equirectangular HDR sky; HDRI diffuse irradiance; RGB16F FBO; linear HDR passthrough
 
 ---
 
