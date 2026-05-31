@@ -181,24 +181,21 @@ profile.json          — runtime scene config (camera, render, HDRI, scene, sha
 | PBR BSDF — Schlick Fresnel, IOR-derived F0, energy-conserving Ld+Ls | ✓ |
 | GUI & Debug — native macOS menu, crosshair, HDRI controls, AOV remap | ✓ |
 | Render Performance — uniform cache, CPU normal matrix, half-res SSAO, release preset | ✓ |
-
 | Quick fixes — world_pos AABB normalisation, bounds AOV, Sky Background menu toggle | ✓ |
 
 | Logging & Diagnostics — debug logging, warnings, errors, renderer statistics, screenshot metadata | planned |
 | Performance Profiling (GUI) — render time, rays/sec, samples/sec, memory usage | planned |
-| Hotkeys — H resets the camera to the default scene position | planned |
+| Build & Run — single-step build and run workflow (./build/KODAK no 'dev' or 'release') | planned |
 
-| Directory Structure — designed for future expansion, procedural development, maintainability, and clean code organization | planned |
-| Build & Run — single-step build and run workflow | planned |
+| Color Management — OpenEXR I/O linear pipeline, ACES workflow w/ sRGB and Rec709 view LUT | planned |
+| Camera & Lens Effects — ISO, f-stop, shutter speed, DoF, focus distance, chromatic aberration, anamorphic lenses, aspect ratio, Kelvin-based lighting controls  | planned |
 
-| Camera & Lens Effects — ISO, f-stop, shutter speed, DoF, , focus distance, chromatic aberration, anamorphic lenses, aspect ratio, Kelvin-based lighting controls  | planned |
-| Color Management — sRGB, Rec.709 Linear, ACES workflow, OpenEXR I/O | planned |
-
-| Geometry & Shader Library — reusable assets, camera presets, and materials files and presets | planned |
-| Test Scenes — teapot, Cornell Box, three-sphere material test with curved backdrop, scene import/export | planned |
 | Shader update — RGB albedo color parameter (white default), indirect (self-reflection, refraction, SSS) | planned |
-
 | Ray Tracing — shadows, area lights, indirect illumination, brute-force path tracing | planned |
 | Sampling — adaptive sampling, multiple importance sampling (MIS) | planned |
+
+| Directory Structure — designed for future expansion, procedural development, maintainability, and clean code organization | planned |
+| Geometry & Shader Library — reusable assets, camera presets, and materials files and presets, scene import/export | planned |
+| Test Scenes — teapot, cornell box, three-sphere material test with curved backdrop | planned |
 
 | Future Features — 2d groundplane, alembic (cam and geo), turntable, macbeth ColorChecker, diffusion rendering, film grain, cross-platform support (NVIDIA and Apple Silicon) | planned |
