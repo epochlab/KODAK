@@ -48,7 +48,8 @@ AppConfig loadConfig(const std::string& path) {
 
     if (j.contains("render")) {
         const auto& r = j["render"];
-        cfg.render.scale = ji(r.value("scale", json(2)), cfg.render.scale);
+        cfg.render.scale      = ji(r.value("scale",      json(2)),  cfg.render.scale);
+        cfg.render.iblSamples = ji(r.value("iblSamples", json(16)), cfg.render.iblSamples);
     }
 
     if (j.contains("hdri")) {
@@ -80,7 +81,7 @@ void saveConfig(const AppConfig& cfg, const std::string& path) {
         {"filmback",    cfg.camera.filmback},
         {"focalLength", cfg.camera.focalLength}
     };
-    j["render"] = {{"scale", cfg.render.scale}};
+    j["render"] = {{"scale", cfg.render.scale}, {"iblSamples", cfg.render.iblSamples}};
     j["hdri"] = {
         {"path",     cfg.hdri.path},
         {"rotation", {cfg.hdri.rotation.x, cfg.hdri.rotation.y, cfg.hdri.rotation.z}},

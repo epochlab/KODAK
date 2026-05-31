@@ -144,8 +144,9 @@ int main() {
         // ── Shaders ────────────────────────────────────────────────
         Shader shader("shaders/basic.vert", "shaders/basic.frag");
         shader.use();
-        shader.set("uAlbedo",  0);
-        shader.set("uSkyHDR",  1);
+        shader.set("uAlbedo",     0);
+        shader.set("uSkyHDR",     1);
+        shader.set("uIblSamples", cfg.render.iblSamples);
 
         Shader blitShader("shaders/blit.vert", "shaders/blit.frag");
         blitShader.use();

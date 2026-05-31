@@ -12,6 +12,7 @@ uniform float     uNear;
 uniform float     uFar;
 uniform float     uHdriExposure;
 uniform vec3      uHdriRot;         // XYZ Euler rotation in radians — must match sky shader
+uniform int       uIblSamples;      // hemisphere sample count (profile.json render.iblSamples)
 
 layout(location = 0) out vec4 gColor;
 layout(location = 1) out vec4 gNormal;  // view-space normals for SSAO
@@ -42,18 +43,17 @@ vec3 irradianceIBL(vec3 n) {
     vec3 tangent   = normalize(cross(up, n));
     vec3 bitangent = cross(n, tangent);
 
-    const int   N   = 64;
     const float PHI = 2.3999632; // golden angle = 2π/φ²
     vec3 acc = vec3(0.0);
-    for (int i = 0; i < N; i++) {
-        float cosTheta = sqrt(1.0 - (float(i) + 0.5) / float(N));
+    for (int i = 0; i < uIblSamples; i++) {
+        float cosTheta = sqrt(1.0 - (float(i) + 0.5) / float(uIblSamples));
         float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
         float phi      = PHI * float(i);
         vec3  local    = vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
         vec3  world    = local.x * tangent + local.y * bitangent + local.z * n;
         acc += sampleEnvDir(world);
     }
-    return acc / float(N);
+    return acc / float(uIblSamples);
 }
 
 void main() {

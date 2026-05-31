@@ -23,7 +23,8 @@
     "visible": false
   },
   "render": {
-    "scale": 2
+    "scale": 2,
+    "iblSamples": 16
   },
   "scene": {
     "geometry": "assets/geo/broken_stump_rkswd_ue_high/rkswd_tier_1.gltf",

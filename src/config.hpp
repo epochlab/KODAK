@@ -14,7 +14,8 @@ struct AppConfig {
     } camera;
 
     struct Render {
-        int   scale = 2;
+        int scale      = 2;
+        int iblSamples = 16;
     } render;
 
     struct Hdri {
