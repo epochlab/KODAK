@@ -10,7 +10,6 @@ struct ObjectInfo {
 
 struct SystemInfo {
     const char* renderer = "";   // GL_RENDERER
-    const char* vendor   = "";   // GL_VENDOR
     const char* version  = "";   // GL_VERSION
 };
 

@@ -22,7 +22,6 @@ HUD::HUD(GLFWwindow* window) {
 
     // Query GPU info once — GL context is current here
     m_sys.renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
-    m_sys.vendor   = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
     m_sys.version  = reinterpret_cast<const char*>(glGetString(GL_VERSION));
 }
 

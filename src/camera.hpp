@@ -26,11 +26,10 @@ public:
     void processMouseMove(double xpos, double ypos);
     void resetMouse() { m_firstMouse = true; }
 
-    // Orbit mode: camera tumbles around a fixed world-space pivot.
-    void      setOrbitPivot(glm::vec3 pivot);
-    void      clearOrbit();
-    bool      isOrbiting()  const { return m_orbiting; }
-    glm::vec3 orbitPivot()  const { return m_pivot; }
+    // Orbit: LMB press calls setPivot + beginOrbit; release calls endOrbit.
+    void setPivot(glm::vec3 pivot);   // store pivot; does not start orbiting
+    void beginOrbit();                // LMB press: start tumbling
+    void endOrbit();                  // LMB release: stop tumbling
 
     glm::vec3 position()      const { return m_pos; }
     glm::vec3 front()         const;
@@ -41,8 +40,8 @@ public:
     float     filmback()      const { return m_filmbackMm; }
     float     focalLength()   const { return m_focalLengthMm; }
 
-    float moveSpeed        = 3.75f;
-    float mouseSensitivity = 0.10f;
+    float moveSpeed        = 2.5f;
+    float mouseSensitivity = 0.05f;
 
 private:
     glm::vec3 m_pos;
@@ -56,6 +55,5 @@ private:
     double m_lastX = 0.0, m_lastY = 0.0;
 
     glm::vec3 m_pivot    {0.f, 0.f, 0.f};
-    float     m_radius   = 5.f;
     bool      m_orbiting = false;
 };
