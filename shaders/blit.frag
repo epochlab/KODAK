@@ -16,6 +16,12 @@ void main() {
         float ao    = (depth >= 0.9999) ? 0.0 : texture(uAO, vUV).r;
         FragColor   = vec4(ao, ao, ao, 1.0);
     } else {
-        FragColor = vec4(texture(uFrame, vUV).rgb, 1.0);
+        vec3  color = texture(uFrame, vUV).rgb;
+        if (uViewMode == 1) {
+            float depth = texture(uDepth, vUV).r;
+            float ao    = (depth >= 0.9999) ? 1.0 : texture(uAO, vUV).r;
+            color *= ao;
+        }
+        FragColor = vec4(color, 1.0);
     }
 }
