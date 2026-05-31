@@ -122,7 +122,7 @@ int main() {
         const int BASE_H      = cfg.render.height > 0 ? cfg.render.height : 1152;
         const int downsample = cfg.render.downsample > 0 ? cfg.render.downsample : 2;
 
-        Window win(BASE_W / downsample, BASE_H / downsample, "BOUNCE");
+        Window win(BASE_W / downsample, BASE_H / downsample, "KODAK");
         glfwSetCursorPosCallback(win.handle(), onMouseMove);
         glfwSetWindowSizeCallback(win.handle(), [](GLFWwindow*, int, int) {
             if (g_camera) g_camera->resetMouse();
@@ -462,7 +462,7 @@ int main() {
                 const char* home = getenv("HOME");
                 std::string desktop = home ? std::string(home) + "/Desktop" : ".";
                 std::time_t t = std::time(nullptr);
-                std::string fname = desktop + "/BOUNCE_" + std::to_string(t) + ".png";
+                std::string fname = desktop + "/KODAK_" + std::to_string(t) + ".png";
                 std::vector<unsigned char> pixels(BASE_W * BASE_H * 3);
                 glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
                 glReadPixels(0, 0, BASE_W, BASE_H, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());

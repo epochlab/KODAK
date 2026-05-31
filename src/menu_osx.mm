@@ -31,7 +31,7 @@ void initOsxMenuBar(OsxMenuFlags* flags) {
     // ── App menu ──────────────────────────────────────────────
     NSMenuItem* appItem = [[NSMenuItem alloc] init];
     NSMenu* appMenu = [[NSMenu alloc] init];
-    [appMenu addItemWithTitle:@"Quit BOUNCE"
+    [appMenu addItemWithTitle:@"Quit"
                       action:@selector(terminate:)
                keyEquivalent:@"q"];
     appItem.submenu = appMenu;
