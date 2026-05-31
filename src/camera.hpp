@@ -26,7 +26,14 @@ public:
     void processMouseMove(double xpos, double ypos);
     void resetMouse() { m_firstMouse = true; }
 
+    // Orbit mode: camera tumbles around a fixed world-space pivot.
+    void      setOrbitPivot(glm::vec3 pivot);
+    void      clearOrbit();
+    bool      isOrbiting()  const { return m_orbiting; }
+    glm::vec3 orbitPivot()  const { return m_pivot; }
+
     glm::vec3 position()      const { return m_pos; }
+    glm::vec3 front()         const;
     float     yaw()           const { return m_yaw; }
     float     pitch()         const { return m_pitch; }
     float     nearPlane()     const { return m_near; }
@@ -48,5 +55,7 @@ private:
     bool   m_firstMouse = true;
     double m_lastX = 0.0, m_lastY = 0.0;
 
-    glm::vec3 front() const;
+    glm::vec3 m_pivot    {0.f, 0.f, 0.f};
+    float     m_radius   = 5.f;
+    bool      m_orbiting = false;
 };

@@ -45,15 +45,35 @@ void Camera::setPitch(float deg) {
     m_pitch = std::clamp(deg, -89.0f, 89.0f);
 }
 
+void Camera::setOrbitPivot(glm::vec3 pivot) {
+    m_pivot    = pivot;
+    m_radius   = std::max(0.01f, glm::length(m_pos - pivot));
+    m_orbiting = true;
+}
+
+void Camera::clearOrbit() {
+    m_orbiting = false;
+}
+
 void Camera::processInput(GLFWwindow* window, float dt) {
-    float spd   = moveSpeed * dt;
+    float spd = moveSpeed * dt;
+
+    if (m_orbiting) {
+        // W/S dolly toward/away from pivot; A/D/E/Q disabled in orbit mode.
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            m_radius = std::max(0.01f, m_radius - spd);
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            m_radius += spd;
+        m_pos = m_pivot - m_radius * front();
+        return;
+    }
+
     glm::vec3 f = front();
     glm::vec3 r = glm::normalize(glm::cross(f, glm::vec3{0, 1, 0}));
-
-    if (glfwGetKey(window, GLFW_KEY_W)           == GLFW_PRESS) m_pos += f * spd;
-    if (glfwGetKey(window, GLFW_KEY_S)           == GLFW_PRESS) m_pos -= f * spd;
-    if (glfwGetKey(window, GLFW_KEY_A)           == GLFW_PRESS) m_pos -= r * spd;
-    if (glfwGetKey(window, GLFW_KEY_D)           == GLFW_PRESS) m_pos += r * spd;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) m_pos += f * spd;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) m_pos -= f * spd;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) m_pos -= r * spd;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) m_pos += r * spd;
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) m_pos.y += spd;
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) m_pos.y -= spd;
 }
@@ -71,4 +91,6 @@ void Camera::processMouseMove(double xpos, double ypos) {
     m_lastY = ypos;
     m_yaw   += dx;
     m_pitch  = std::clamp(m_pitch + dy, -89.0f, 89.0f);
+    if (m_orbiting)
+        m_pos = m_pivot - m_radius * front();
 }
