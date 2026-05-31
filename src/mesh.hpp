@@ -24,7 +24,6 @@ public:
     int    triangleCount()  const { return m_indexCount / 3; }
     int    indexCount()     const { return m_indexCount; }
     float  boundingRadius() const { return m_boundingRadius; }   // model space, origin-centred
-    size_t gpuBytes()       const { return m_gpuBytes; }          // VBO + EBO bytes
 
     static Mesh cube();
     static Mesh plane(float size = 10.0f);
@@ -34,5 +33,4 @@ private:
     GLuint  m_vao, m_vbo, m_ebo;
     GLsizei m_indexCount;
     float   m_boundingRadius = 0.0f;
-    size_t  m_gpuBytes       = 0;
 };

@@ -169,7 +169,7 @@ void HUD::draw(FrameStats& s) {
     // ── HDRI ──────────────────────────────────────────────────
     sectionHeader("HDRI");
     ImGui::SetNextItemWidth(-1.0f);
-    ImGui::SliderFloat("##hdriYaw", &s.hdriYawDeg, 1.0f, 360.0f, "Y rot  %.0f deg");
+    ImGui::SliderFloat("##hdriYaw", &s.hdriYawDeg, 1.0f, 360.0f, "Y-axis  %.0f deg");
     ImGui::Checkbox("Flip V", &s.hdriFlipV);
 
     ImGui::End();

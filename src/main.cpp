@@ -172,7 +172,7 @@ int main() {
         HUD hud(win.handle());
 
         Texture skyTex(cfg.hdri.path);
-        Model   rock = Model::loadGLTF(cfg.scene.geometry);
+        Model   geom = Model::loadGLTF(cfg.scene.geometry);
 
         // ── SSAO kernel (deterministic, seed 42) ───────────────────
         std::mt19937 rng(42);
@@ -333,7 +333,7 @@ int main() {
             shader.set("uMetallic",        cfg.shading.metallic);
             shader.set("uIOR",             cfg.shading.ior);
 
-            const glm::mat4 mRock = sceneRot * rock.transform();
+            const glm::mat4 geomMat = sceneRot * geom.transform();
             Frustum frustum;
             frustum.update(proj * view);
 
@@ -360,9 +360,9 @@ int main() {
             skyTex.bind(1);  // HDRI on unit 1 for diffuse irradiance
 
             int drawn = 0, total = 1;
-            glm::vec3 modelCentre = glm::vec3(mRock * glm::vec4(rock.centre(), 1.0f));
-            if (frustum.testSphere(modelCentre, rock.boundingRadius())) {
-                rock.draw(shader, mRock);
+            glm::vec3 geomCentre = glm::vec3(geomMat * glm::vec4(geom.centre(), 1.0f));
+            if (frustum.testSphere(geomCentre, geom.boundingRadius())) {
+                geom.draw(shader, geomMat);
                 ++drawn;
             }
 
@@ -420,8 +420,8 @@ int main() {
             stats.drawCalls     = drawn;
             stats.drawCallsTotal  = total;
             stats.drawCallsCulled = total - drawn;
-            stats.totalTriangles  = rock.triangleCount();
-            stats.totalVertices   = rock.vertexCount();
+            stats.totalTriangles  = geom.triangleCount();
+            stats.totalVertices   = geom.vertexCount();
             stats.width         = BASE_W;
             stats.height        = BASE_H;
             stats.downsample    = downsample;
@@ -439,7 +439,7 @@ int main() {
             stats.hdriFlipV       = cfg.hdri.flipV;
             stats.skyVisible      = skyVisible;
             stats.numObjects      = 1;
-            stats.objects[0]      = {rock.name().c_str(), rock.triangleCount(), rock.vertexCount()};
+            stats.objects[0]      = {geom.name().c_str(), geom.triangleCount(), geom.vertexCount()};
 
             hud.beginFrame();
             hud.draw(stats);
