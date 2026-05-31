@@ -41,8 +41,8 @@ public:
     float     filmback()      const { return m_filmbackMm; }
     float     focalLength()   const { return m_focalLengthMm; }
 
-    float moveSpeed        = 5.0f;
-    float mouseSensitivity = 0.05f;
+    float moveSpeed        = 3.75f;
+    float mouseSensitivity = 0.10f;
 
 private:
     glm::vec3 m_pos;

@@ -252,9 +252,6 @@ int main() {
 
         bool skyVisible = cfg.hdri.visible;
 
-        // Cached matrices from the previous frame — used for orbit pivot reconstruction.
-        glm::mat4 lastView(1.f), lastProj(1.f);
-
         glm::mat4 sceneRot(1.0f);
         sceneRot = glm::rotate(sceneRot, glm::radians(cfg.scene.rotation.x), glm::vec3(1,0,0));
         sceneRot = glm::rotate(sceneRot, glm::radians(cfg.scene.rotation.y), glm::vec3(0,1,0));
@@ -268,36 +265,14 @@ int main() {
             if (glfwGetKey(win.handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
 
-            // ── Space: hold to orbit around clicked world point ───
+            // ── Space: hold to orbit around geometry centre ───────
             bool spaceNow = glfwGetKey(win.handle(), GLFW_KEY_SPACE) == GLFW_PRESS;
             if (spaceNow && !prevSpace) {
                 g_mouseEnabled = true;
                 glfwSetInputMode(win.handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 camera.resetMouse();
 
-                // Sample the depth buffer at the cursor position to find the
-                // world-space pivot point for orbiting.
-                double cx, cy;
-                glfwGetCursorPos(win.handle(), &cx, &cy);
-                int px = glm::clamp(int(cx * renderScale), 0, BASE_W - 1);
-                int py = glm::clamp(BASE_H - 1 - int(cy * renderScale), 0, BASE_H - 1);
-
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, rt.fbo);
-                float depth = 1.0f;
-                glReadPixels(px, py, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
-                glm::vec3 pivot;
-                if (depth < 1.0f) {
-                    float ndcX = (float(px) / BASE_W) * 2.f - 1.f;
-                    float ndcY = (float(py) / BASE_H) * 2.f - 1.f;
-                    float ndcZ = depth * 2.f - 1.f;
-                    glm::vec4 w = glm::inverse(lastProj * lastView) * glm::vec4(ndcX, ndcY, ndcZ, 1.f);
-                    pivot = glm::vec3(w) / w.w;
-                } else {
-                    // Cursor over sky — pivot 3 m ahead.
-                    pivot = camera.position() + 3.f * camera.front();
-                }
+                glm::vec3 pivot = glm::vec3(sceneRot * rock.transform() * glm::vec4(rock.centre(), 1.f));
                 camera.setOrbitPivot(pivot);
             }
             if (!spaceNow && prevSpace) {
@@ -379,12 +354,10 @@ int main() {
                 }
             }
 
-            // Cache matrices (also stored as lastView/lastProj for next frame's orbit pivot).
+            // Cache matrices.
             const glm::mat4 view = camera.viewMatrix();
             const glm::mat4 proj = camera.projectionMatrix();
             const glm::mat4 invProj = glm::inverse(proj);
-            lastView = view;
-            lastProj = proj;
 
             // ── Geometry pass → G-buffer FBO ──────────────────────
             glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
