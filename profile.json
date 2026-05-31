@@ -24,7 +24,9 @@
   },
   "render": {
     "scale": 2,
-    "iblSamples": 16
+    "iblSamples": 16,
+    "width": 2048,
+    "height": 1152
   },
   "scene": {
     "geometry": "assets/geo/broken_stump_rkswd_ue_high/rkswd_tier_1.gltf",

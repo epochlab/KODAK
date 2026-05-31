@@ -129,11 +129,12 @@ struct SsaoTarget {
 
 int main() {
     try {
-        constexpr int BASE_W    = 2048, BASE_H = 1152;
         constexpr int FRAME_CAP = 0;  // 0 = vsync/unlimited
 
         AppConfig cfg = loadConfig("profile.json");
-        const int renderScale = cfg.render.scale > 0 ? cfg.render.scale : 2;
+        const int BASE_W      = cfg.render.width  > 0 ? cfg.render.width  : 2048;
+        const int BASE_H      = cfg.render.height > 0 ? cfg.render.height : 1152;
+        const int renderScale = cfg.render.scale  > 0 ? cfg.render.scale  : 2;
 
         Window win(BASE_W / renderScale, BASE_H / renderScale, "BOUNCE");
         glfwSetCursorPosCallback(win.handle(), onMouseMove);
