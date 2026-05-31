@@ -79,3 +79,7 @@ void Shader::set(const std::string& name, float f) const {
 void Shader::set(const std::string& name, int i) const {
     glUniform1i(loc(name), i);
 }
+
+void Shader::set(const std::string& name, bool b) const {
+    glUniform1i(loc(name), b ? 1 : 0);
+}

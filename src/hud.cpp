@@ -44,19 +44,48 @@ static void sectionHeader(const char* label) {
 }
 
 void HUD::draw(FrameStats& s) {
+    // Crosshair (+) at screen centre — always visible.
+    {
+        ImDrawList* dl = ImGui::GetBackgroundDrawList();
+        ImVec2 c(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
+        const float  arm = 8.0f;
+        const ImU32  col = IM_COL32(255, 255, 255, 200);
+        dl->AddLine({c.x - arm, c.y}, {c.x + arm, c.y}, col, 1.0f);
+        dl->AddLine({c.x, c.y - arm}, {c.x, c.y + arm}, col, 1.0f);
+    }
+
     s.fpsHistory[s.fpsHistoryOffset] = s.fps;
     s.fpsHistoryOffset = (s.fpsHistoryOffset + 1) % 128;
 
     // Frame-time min/max over the populated history window (fps → ms).
     float tMin = 1e9f, tMax = 0.0f;
     for (float f : s.fpsHistory) {
-        if (f <= 0.0f) continue;            // skip unfilled slots
+        if (f <= 0.0f) continue;
         float ms = 1000.0f / f;
         if (ms < tMin) tMin = ms;
         if (ms > tMax) tMax = ms;
     }
     if (tMax > 0.0f) { s.frameTimeMin = tMin; s.frameTimeMax = tMax; }
 
+    // ── Floating restore button (visible only when panel is hidden) ──
+    if (!s.showPanel) {
+        const ImGuiWindowFlags btnFlags =
+            ImGuiWindowFlags_NoDecoration    |
+            ImGuiWindowFlags_NoNav           |
+            ImGuiWindowFlags_NoMove          |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_AlwaysAutoResize;
+        float dispW = ImGui::GetIO().DisplaySize.x;
+        ImGui::SetNextWindowPos({dispW - 46.0f, 10.0f}, ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.55f);
+        ImGui::Begin("##restore", nullptr, btnFlags);
+        if (ImGui::Button(" \xE2\x97\x88 "))   // UTF-8 ◈
+            s.showPanel = true;
+        ImGui::End();
+        return;
+    }
+
+    // ── Stats panel ───────────────────────────────────────────
     const ImGuiWindowFlags flags =
         ImGuiWindowFlags_NoDecoration    |
         ImGuiWindowFlags_AlwaysAutoResize |
@@ -69,18 +98,6 @@ void HUD::draw(FrameStats& s) {
     ImGui::SetNextWindowSize({230.0f, 0.0f});
 
     if (!ImGui::Begin("##hud", nullptr, flags)) { ImGui::End(); return; }
-
-    // ── View ──────────────────────────────────────────────────
-    sectionHeader("View");
-    static const char* k_modeNames[] = {
-        "beauty", "wireframe", "alpha", "depth", "world_pos",
-        "world_normals", "uv", "albedo", "direct_diffuse", "direct_refl",
-        "shading_normal", "ao", "fresnel"
-    };
-    int modeIdx = s.viewMode - 1;
-    ImGui::SetNextItemWidth(-1.0f);
-    if (ImGui::Combo("##channel", &modeIdx, k_modeNames, 13))
-        s.viewMode = modeIdx + 1;
 
     // ── Frame ─────────────────────────────────────────────────
     sectionHeader("Frame");
@@ -136,6 +153,24 @@ void HUD::draw(FrameStats& s) {
     sectionHeader("GPU");
     ImGui::TextWrapped("%s", m_sys.renderer);
     ImGui::TextColored({0.6f, 0.6f, 0.6f, 1.0f}, "GL %s", m_sys.version);
+
+    // ── AOV ───────────────────────────────────────────────────
+    sectionHeader("AOV");
+    static const char* k_modeNames[] = {
+        "beauty", "wireframe", "alpha", "depth", "world_pos",
+        "world_normals", "uv", "albedo", "direct_diffuse", "direct_refl",
+        "shading_normal", "ao", "fresnel"
+    };
+    int modeIdx = s.viewMode - 1;
+    ImGui::SetNextItemWidth(-1.0f);
+    if (ImGui::Combo("##channel", &modeIdx, k_modeNames, 13))
+        s.viewMode = modeIdx + 1;
+
+    // ── HDRI ──────────────────────────────────────────────────
+    sectionHeader("HDRI");
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::SliderFloat("##hdriYaw", &s.hdriYawDeg, 1.0f, 360.0f, "Y rot  %.0f deg");
+    ImGui::Checkbox("Flip V", &s.hdriFlipV);
 
     ImGui::End();
 }

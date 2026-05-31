@@ -56,6 +56,17 @@ struct FrameStats {
 
     // View mode
     int         viewMode      = 1;
+
+    // HDRI controls
+    float       hdriYawDeg    = 0.0f;
+    bool        hdriFlipV     = false;
+
+    // Menu / panel state
+    bool        skyVisible    = false;
+    bool        showPanel     = true;
+    bool        doCapture     = false;
+    bool        doSaveJson    = false;
+    bool        doQuit        = false;
 };
 
 class HUD {

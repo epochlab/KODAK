@@ -1,4 +1,6 @@
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include "menu_osx.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -126,6 +128,10 @@ int main() {
             if (g_camera) g_camera->resetMouse();
         });
 
+        OsxMenuFlags menuFlags;
+        menuFlags.skyVisible = cfg.hdri.visible;
+        initOsxMenuBar(&menuFlags);
+
         // ── Shaders ────────────────────────────────────────────────
         Shader shader("shaders/basic.vert", "shaders/basic.frag");
         shader.use();
@@ -221,20 +227,14 @@ int main() {
         glGenQueries(GPU_QUERY_FRAMES, gpuQueries);
 
         FrameStats stats{};
+        stats.hdriYawDeg = cfg.hdri.rotation.y;
+        stats.hdriFlipV  = cfg.hdri.flipV;
+        stats.skyVisible = cfg.hdri.visible;
+        stats.showPanel  = true;
         int    viewMode    = 1;
         bool   prevLMB    = false;
-        bool   prevH      = false;
-        bool   prevK      = false;
-        bool   prevJ      = false;
-        bool   prevB      = false;
-        bool   showHUD    = true;
         float  smoothFps  = 0.0f;
         double lastTime   = glfwGetTime();
-
-        const glm::vec3 hdriRotRad(
-            glm::radians(cfg.hdri.rotation.x),
-            glm::radians(cfg.hdri.rotation.y),
-            glm::radians(cfg.hdri.rotation.z));
 
         bool skyVisible = cfg.hdri.visible;
 
@@ -250,11 +250,18 @@ int main() {
             float  dt  = static_cast<float>(now - lastTime);
             lastTime   = now;
 
+            const glm::vec3 hdriRotRad(
+                glm::radians(cfg.hdri.rotation.x),
+                glm::radians(cfg.hdri.rotation.y),
+                glm::radians(cfg.hdri.rotation.z));
+
             if (glfwGetKey(win.handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
 
             // ── LMB: sample pivot at screen centre, then orbit ────────
-            bool lmbNow = glfwGetMouseButton(win.handle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+            // Ignore LMB when ImGui is capturing it (e.g. dragging a slider).
+            bool lmbNow = !ImGui::GetIO().WantCaptureMouse &&
+                          glfwGetMouseButton(win.handle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
             if (lmbNow && !prevLMB) {
                 int px = BASE_W / 2;
                 int py = BASE_H / 2;
@@ -283,54 +290,6 @@ int main() {
                 glfwSetInputMode(win.handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
             prevLMB = lmbNow;
-
-            // ── H: toggle HUD ─────────────────────────────────────
-            bool hNow = glfwGetKey(win.handle(), GLFW_KEY_H) == GLFW_PRESS;
-            if (hNow && !prevH) showHUD = !showHUD;
-            prevH = hNow;
-
-            // ── K: screenshot ─────────────────────────────────────
-            bool kNow = glfwGetKey(win.handle(), GLFW_KEY_K) == GLFW_PRESS;
-            if (kNow && !prevK) {
-                const char* home = getenv("HOME");
-                std::string desktop = home ? std::string(home) + "/Desktop" : ".";
-                std::time_t t = std::time(nullptr);
-                std::string fname = desktop + "/BOUNCE_" + std::to_string(t) + ".png";
-                std::vector<unsigned char> pixels(BASE_W * BASE_H * 3);
-                glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
-                glReadPixels(0, 0, BASE_W, BASE_H, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                // Flip vertically: OpenGL origin is bottom-left.
-                std::vector<unsigned char> flipped(pixels.size());
-                int stride = BASE_W * 3;
-                for (int row = 0; row < BASE_H; ++row)
-                    std::copy(pixels.begin() + row * stride,
-                              pixels.begin() + (row + 1) * stride,
-                              flipped.begin() + (BASE_H - 1 - row) * stride);
-                stbi_write_png(fname.c_str(), BASE_W, BASE_H, 3, flipped.data(), stride);
-                std::cout << "Screenshot: " << fname << '\n';
-            }
-            prevK = kNow;
-
-            // ── J: save camera pos/rot as profile default ─────────
-            bool jNow = glfwGetKey(win.handle(), GLFW_KEY_J) == GLFW_PRESS;
-            if (jNow && !prevJ) {
-                cfg.camera.position = camera.position();
-                cfg.camera.yaw      = camera.yaw();
-                cfg.camera.pitch    = camera.pitch();
-                saveConfig(cfg, "profile.json");
-                std::cout << "Profile saved: pos("
-                    << cfg.camera.position.x << ", "
-                    << cfg.camera.position.y << ", "
-                    << cfg.camera.position.z << ") yaw="
-                    << cfg.camera.yaw << " pitch=" << cfg.camera.pitch << '\n';
-            }
-            prevJ = jNow;
-
-            // ── B: toggle sky background ───────────────────────────
-            bool bNow = glfwGetKey(win.handle(), GLFW_KEY_B) == GLFW_PRESS;
-            if (bNow && !prevB) skyVisible = !skyVisible;
-            prevB = bNow;
 
             camera.setAspect(win.aspectRatio());
             camera.processInput(win.handle(), dt);
@@ -368,6 +327,7 @@ int main() {
             shader.set("uFar",             camera.farPlane());
             shader.set("uHdriExposure",    cfg.hdri.exposure);
             shader.set("uHdriRot",         hdriRotRad);
+            shader.set("uHdriFlipV",       cfg.hdri.flipV);
             shader.set("uCamPos",          camera.position());
             shader.set("uRoughness",       cfg.shading.roughness);
             shader.set("uMetallic",        cfg.shading.metallic);
@@ -384,9 +344,10 @@ int main() {
                 glDisable(GL_DEPTH_TEST);
                 glDepthMask(GL_FALSE);
                 skyShader.use();
-                skyShader.set("uInvVP",       glm::inverse(proj * view));
-                skyShader.set("uHdriRot",     hdriRotRad);
+                skyShader.set("uInvVP",        glm::inverse(proj * view));
+                skyShader.set("uHdriRot",      hdriRotRad);
                 skyShader.set("uHdriExposure", cfg.hdri.exposure);
+                skyShader.set("uHdriFlipV",    cfg.hdri.flipV);
                 skyTex.bind(0);
                 glBindVertexArray(blitVAO);
                 glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -474,15 +435,60 @@ int main() {
             stats.camNear         = camera.nearPlane();
             stats.camFar          = camera.farPlane();
             stats.viewMode        = viewMode;
+            stats.hdriYawDeg      = cfg.hdri.rotation.y;
+            stats.hdriFlipV       = cfg.hdri.flipV;
+            stats.skyVisible      = skyVisible;
             stats.numObjects      = 1;
             stats.objects[0]      = {rock.name().c_str(), rock.triangleCount(), rock.vertexCount()};
 
-            if (showHUD) {
-                hud.beginFrame();
-                hud.draw(stats);
-                hud.endFrame();
-                viewMode = stats.viewMode;  // pick up any change from the dropdown
+            hud.beginFrame();
+            hud.draw(stats);
+            hud.endFrame();
+
+            // Merge native menu one-shot actions into stats, then sync checkmarks.
+            if (menuFlags.doCapture)  { stats.doCapture  = true; menuFlags.doCapture  = false; }
+            if (menuFlags.doSaveJson) { stats.doSaveJson = true; menuFlags.doSaveJson = false; }
+            if (menuFlags.doQuit)     { stats.doQuit     = true; menuFlags.doQuit     = false; }
+            menuFlags.skyVisible = skyVisible;
+            menuFlags.showPanel  = stats.showPanel;
+            syncOsxMenuBar(menuFlags);
+
+            viewMode            = stats.viewMode;
+            cfg.hdri.rotation.y = stats.hdriYawDeg;
+            cfg.hdri.flipV      = stats.hdriFlipV;
+            skyVisible          = stats.skyVisible;
+
+            if (stats.doCapture) {
+                const char* home = getenv("HOME");
+                std::string desktop = home ? std::string(home) + "/Desktop" : ".";
+                std::time_t t = std::time(nullptr);
+                std::string fname = desktop + "/BOUNCE_" + std::to_string(t) + ".png";
+                std::vector<unsigned char> pixels(BASE_W * BASE_H * 3);
+                glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
+                glReadPixels(0, 0, BASE_W, BASE_H, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                std::vector<unsigned char> flipped(pixels.size());
+                int stride = BASE_W * 3;
+                for (int row = 0; row < BASE_H; ++row)
+                    std::copy(pixels.begin() + row * stride,
+                              pixels.begin() + (row + 1) * stride,
+                              flipped.begin() + (BASE_H - 1 - row) * stride);
+                stbi_write_png(fname.c_str(), BASE_W, BASE_H, 3, flipped.data(), stride);
+                std::cout << "Screenshot: " << fname << '\n';
+                stats.doCapture = false;
             }
+
+            if (stats.doSaveJson) {
+                cfg.camera.position = camera.position();
+                cfg.camera.yaw      = camera.yaw();
+                cfg.camera.pitch    = camera.pitch();
+                saveConfig(cfg, "profile.json");
+                std::cout << "Profile saved.\n";
+                stats.doSaveJson = false;
+            }
+
+            if (stats.doQuit)
+                glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
 
             win.swapAndPoll();
         }

@@ -2,10 +2,11 @@
 
 in vec2 vTexCoord;
 
-uniform sampler2D uSkyHDR;  // equirectangular HDR panorama
-uniform mat4      uInvVP;   // inverse(projection * view), updated each frame
-uniform vec3      uHdriRot; // XYZ Euler rotation in radians applied to the sky direction
+uniform sampler2D uSkyHDR;    // equirectangular HDR panorama
+uniform mat4      uInvVP;     // inverse(projection * view), updated each frame
+uniform vec3      uHdriRot;   // XYZ Euler rotation in radians applied to the sky direction
 uniform float     uHdriExposure;
+uniform bool      uHdriFlipV; // flip panorama vertically
 
 out vec4 FragColor;
 
@@ -32,7 +33,8 @@ void main() {
 
     float phi   = atan(dir.z, dir.x);
     float theta = acos(clamp(dir.y, -1.0, 1.0));
-    vec2  uv    = vec2(phi / (2.0 * PI) + 0.5, 1.0 - theta / PI);
+    float v     = uHdriFlipV ? theta / PI : 1.0 - theta / PI;
+    vec2  uv    = vec2(phi / (2.0 * PI) + 0.5, v);
 
     FragColor = vec4(texture(uSkyHDR, uv).rgb * uHdriExposure, 1.0);
 }

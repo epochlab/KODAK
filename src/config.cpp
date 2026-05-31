@@ -70,6 +70,7 @@ AppConfig loadConfig(const std::string& path) {
         cfg.hdri.rotation = jvec3(h.value("rotation", json::array({0,0,0})), cfg.hdri.rotation);
         cfg.hdri.visible  = jb(h.value("visible",  json(true)),  cfg.hdri.visible);
         cfg.hdri.exposure = jf(h.value("exposure", json(1.f)),   cfg.hdri.exposure);
+        cfg.hdri.flipV    = jb(h.value("flipV",    json(false)),  cfg.hdri.flipV);
     }
 
     if (j.contains("scene")) {
@@ -83,9 +84,10 @@ AppConfig loadConfig(const std::string& path) {
 }
 
 void saveConfig(const AppConfig& cfg, const std::string& path) {
-    json j;
-    j["camera"] = {
-        {"position",    {cfg.camera.position.x, cfg.camera.position.y, cfg.camera.position.z}},
+    using ojson = nlohmann::ordered_json;
+    ojson j;
+    j["camera"] = ojson{
+        {"position",    ojson{cfg.camera.position.x, cfg.camera.position.y, cfg.camera.position.z}},
         {"yaw",         cfg.camera.yaw},
         {"pitch",       cfg.camera.pitch},
         {"near",        cfg.camera.near},
@@ -93,25 +95,30 @@ void saveConfig(const AppConfig& cfg, const std::string& path) {
         {"filmback",    cfg.camera.filmback},
         {"focalLength", cfg.camera.focalLength}
     };
-    j["render"] = {{"downsample", cfg.render.downsample}, {"iblSamples", cfg.render.iblSamples},
-                   {"width", cfg.render.width}, {"height", cfg.render.height}};
-    j["shading"] = {
+    j["render"] = ojson{
+        {"width",      cfg.render.width},
+        {"height",     cfg.render.height},
+        {"downsample", cfg.render.downsample},
+        {"iblSamples", cfg.render.iblSamples}
+    };
+    j["hdri"] = ojson{
+        {"path",     cfg.hdri.path},
+        {"exposure", cfg.hdri.exposure},
+        {"rotation", ojson{cfg.hdri.rotation.x, cfg.hdri.rotation.y, cfg.hdri.rotation.z}},
+        {"visible",  cfg.hdri.visible},
+        {"flipV",    cfg.hdri.flipV}
+    };
+    j["scene"] = ojson{
+        {"geometry", cfg.scene.geometry},
+        {"rotation", ojson{cfg.scene.rotation.x, cfg.scene.rotation.y, cfg.scene.rotation.z}}
+    };
+    j["shading"] = ojson{
         {"roughness",      cfg.shading.roughness},
+        {"metallic",       cfg.shading.metallic},
+        {"ior",            cfg.shading.ior},
         {"ssaoRadius",     cfg.shading.ssaoRadius},
         {"ssaoBias",       cfg.shading.ssaoBias},
-        {"ssaoBlurRadius", cfg.shading.ssaoBlurRadius},
-        {"metallic",       cfg.shading.metallic},
-        {"ior",            cfg.shading.ior}
-    };
-    j["hdri"] = {
-        {"path",     cfg.hdri.path},
-        {"rotation", {cfg.hdri.rotation.x, cfg.hdri.rotation.y, cfg.hdri.rotation.z}},
-        {"visible",  cfg.hdri.visible},
-        {"exposure", cfg.hdri.exposure}
-    };
-    j["scene"] = {
-        {"geometry", cfg.scene.geometry},
-        {"rotation", {cfg.scene.rotation.x, cfg.scene.rotation.y, cfg.scene.rotation.z}}
+        {"ssaoBlurRadius", cfg.shading.ssaoBlurRadius}
     };
 
     std::ofstream f(path);

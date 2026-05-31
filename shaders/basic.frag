@@ -16,6 +16,7 @@ uniform float     uNear;
 uniform float     uFar;
 uniform float     uHdriExposure;
 uniform vec3      uHdriRot;    // XYZ Euler rotation in radians — must match sky shader
+uniform bool      uHdriFlipV;  // flip panorama vertically — must match sky shader
 uniform int       uIblSamples; // hemisphere sample count (profile.json render.iblSamples)
 uniform vec3      uCamPos;     // world-space camera position (for reflection vector)
 uniform float     uRoughness;  // PBR roughness: 0 = mirror, 1 = fully diffuse
@@ -43,7 +44,8 @@ vec3 sampleEnvDir(vec3 dir) {
     dir = rotateXYZ(dir, uHdriRot);
     float phi   = atan(dir.z, dir.x);
     float theta = acos(clamp(dir.y, -1.0, 1.0));
-    return texture(uSkyHDR, vec2(phi / (2.0 * PI) + 0.5, 1.0 - theta / PI)).rgb * uHdriExposure;
+    float v     = uHdriFlipV ? theta / PI : 1.0 - theta / PI;
+    return texture(uSkyHDR, vec2(phi / (2.0 * PI) + 0.5, v)).rgb * uHdriExposure;
 }
 
 // TBN-perturbed shading normal from normal map.
@@ -175,14 +177,16 @@ void main() {
         gColor = vec4(shadingNormal() * 0.5 + 0.5, 1.0);
 
     } else if (uViewMode == 13) {
-        // fresnel — geometry-attenuated F term (what actually weights Ls)
+        // fresnel — geometry-attenuated F term mapped red (0) → green (1)
         vec3  n       = shadingNormal();
         vec3  viewDir = normalize(uCamPos - vFragPos);
         float NoV     = max(dot(n, viewDir), 0.0);
         vec3  albedo  = texture(uAlbedo, vUV).rgb;
         float f0Dia   = pow((uIOR - 1.0) / (uIOR + 1.0), 2.0);
         vec3  F0      = mix(vec3(f0Dia), albedo, uMetallic);
-        gColor = vec4(fresnelWeighted(F0, NoV, uRoughness), 1.0);
+        vec3  F       = fresnelWeighted(F0, NoV, uRoughness);
+        float fVal    = (F.r + F.g + F.b) / 3.0;
+        gColor = vec4(mix(vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), fVal), 1.0);
 
     } else {
         // Mode 1 (Beauty) and mode 12 (AO, display overridden by blit.frag)

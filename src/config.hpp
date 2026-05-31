@@ -30,10 +30,11 @@ struct AppConfig {
     } shading;
 
     struct Hdri {
-        std::string path    = "assets/hdr/HDR_111_Parking_Lot_2_Env.hdr";
-        glm::vec3   rotation{};      // XYZ Euler degrees
-        bool        visible = true;
-        float       exposure= 1.f;
+        std::string path     = "assets/hdr/HDR_111_Parking_Lot_2_Env.hdr";
+        glm::vec3   rotation {};     // XYZ Euler degrees
+        bool        visible  = true;
+        float       exposure = 1.f;
+        bool        flipV    = false;
     } hdri;
 
     struct Scene {
