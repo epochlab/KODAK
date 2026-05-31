@@ -24,35 +24,49 @@ Run from the **project root** (shaders load relative to the working directory):
 
 ## Controls
 
-| Key / Input | Action |
-|-------------|--------|
+| Input | Action |
+|-------|--------|
 | W / A / S / D | Fly forward / left / back / right |
-| E | Fly up |
-| Q | Fly down |
-| LMB (click) | Set orbit pivot at screen centre (depth-sampled) |
-| LMB (drag) | Tumble camera around pivot |
-| 1–9, 0 | Switch view mode |
-| H | Toggle HUD overlay |
-| B | Toggle sky background (beauty mode) |
-| J | Save camera position / rotation to `profile.json` |
-| K | Save screenshot to `screenshots/` |
+| E / Q | Fly up / down |
+| LMB click | Set orbit pivot at screen centre (depth-sampled) |
+| LMB drag | Tumble camera around pivot |
 | ESC | Quit |
 
-## View Modes
+All other actions are in the macOS menu bar:
 
-| Key | Mode |
-|-----|------|
-| 1 | Beauty (PBR: Fresnel-weighted diffuse + specular IBL) |
-| 2 | Wireframe |
-| 3 | Alpha |
-| 4 | Depth |
-| 5 | Position |
-| 6 | Normals |
-| 7 | UV |
-| 8 | Albedo |
-| 9 | Diffuse IBL (Fresnel-weighted, no albedo) |
-| 0 | Specular IBL (Fresnel-weighted) |
-| - | Fresnel (F term — via HUD dropdown) |
+| Menu | Item | Action |
+|------|------|--------|
+| File | Close | Quit (Cmd+W) |
+| View | Sky Background | Toggle HDRI sky in beauty mode |
+| View | Capture | Save screenshot to Desktop |
+| View | Set JSON | Write camera + HDRI state to `profile.json` |
+| View | Show Panel | Toggle the HUD stats panel |
+
+## HUD Panel
+
+The overlay panel (top-left) shows frame timing, memory, viewport, scene stats, and camera parameters. When hidden, a **◈** button in the top-right corner restores it.
+
+**AOV** dropdown (bottom of panel) — selects the active output channel:
+
+| Mode | Channel |
+|------|---------|
+| beauty | PBR: Fresnel-weighted diffuse + specular IBL |
+| wireframe | Triangle edges |
+| alpha | Albedo alpha channel |
+| depth | Linearised scene depth |
+| world_pos | World-space position |
+| world_normals | World-space vertex normals |
+| uv | UV coordinates |
+| albedo | Raw albedo texture |
+| direct_diffuse | Fresnel-weighted diffuse lobe |
+| direct_refl | Fresnel-weighted specular lobe |
+| shading_normal | TBN-perturbed shading normal |
+| ao | SSAO occlusion |
+| fresnel | F term — red (facing) → green (grazing) |
+
+**HDRI** section (bottom of panel):
+- **Y rot slider** (1–360°) — spin the skydome; IBL lighting rotates with it
+- **Flip V** — vertically flip the equirectangular panorama
 
 ## Profile (`profile.json`)
 
@@ -70,10 +84,21 @@ All fields are optional; missing keys fall back to defaults.
     "focalLength": 50.0         // focal length in mm
   },
   "render": {
-    "scale":      2,            // FBO divisor: 2 → render at BASE/2 resolution
     "width":      2048,         // render resolution width (pixels)
     "height":     1152,         // render resolution height (pixels)
+    "downsample": 2,            // FBO divisor: 2 → render at BASE/2 on screen
     "iblSamples": 16            // IBL hemisphere sample count
+  },
+  "hdri": {
+    "path":     "assets/hdr/…", // equirectangular .hdr / .jpg path
+    "exposure": 1.0,            // linear brightness multiplier
+    "rotation": [0, 0, 0],      // XYZ Euler degrees applied to sky direction
+    "visible":  true,           // draw sky background on startup
+    "flipV":    false           // flip panorama vertically
+  },
+  "scene": {
+    "geometry": "assets/geo/…", // glTF 2.0 file path
+    "rotation": [0, 0, 0]       // XYZ Euler degrees applied to loaded geometry
   },
   "shading": {
     "roughness":      0.3,      // GGX roughness: 0 = mirror, 1 = fully diffuse
@@ -82,21 +107,11 @@ All fields are optional; missing keys fall back to defaults.
     "ssaoRadius":     0.5,      // SSAO hemisphere radius in world units
     "ssaoBias":       0.025,    // SSAO depth bias
     "ssaoBlurRadius": 2         // SSAO blur: 1 = 3×3, 2 = 5×5
-  },
-  "hdri": {
-    "path":     "assets/hdr/…", // equirectangular .hdr / .jpg path
-    "rotation": [0, 0, 0],      // XYZ Euler degrees applied to sky direction
-    "visible":  true,           // draw sky background on startup
-    "exposure": 1.0             // linear brightness multiplier
-  },
-  "scene": {
-    "geometry": "assets/geo/…", // glTF 2.0 file path
-    "rotation": [0, 0, 0]       // XYZ Euler degrees applied to loaded geometry
   }
 }
 ```
 
-Press **J** at runtime to write the current camera state back to `profile.json`.
+Use **View → Set JSON** to write the current camera and HDRI state back to `profile.json`.
 
 ## Dependencies
 
@@ -106,48 +121,50 @@ Fetched automatically by CMake:
 |---------|---------|---------|
 | [GLFW](https://www.glfw.org) | 3.4 | Window + OpenGL context + input |
 | [GLM](https://github.com/g-truc/glm) | 1.0.1 | Math (vectors, matrices) |
-| [Dear ImGui](https://github.com/ocornut/imgui) | 1.91.9 | Debug HUD overlay |
+| [Dear ImGui](https://github.com/ocornut/imgui) | 1.91.9 | HUD overlay |
 | [cgltf](https://github.com/jkuhlmann/cgltf) | 1.14 | glTF 2.0 parsing (header-only) |
-| [nlohmann/json](https://github.com/nlohmann/json) | 3.11.3 | JSON config parser (header-only) |
+| [nlohmann/json](https://github.com/nlohmann/json) | 3.11.3 | JSON config (header-only) |
 
-OpenGL, stb_image, and stb_image_write are provided by the macOS system framework and committed headers respectively.
+OpenGL, Cocoa, stb_image, and stb_image_write are provided by the macOS system frameworks and committed headers respectively.
 
 ## Architecture
 
 ```
 src/
-├── main.cpp        — render loop, G-buffer, SSAO, config wiring
-├── config.hpp/.cpp — JSON profile loader (nlohmann/json)
-├── window.hpp/.cpp — GLFW window + context (Retina-aware)
-├── shader.hpp/.cpp — GLSL compile/link, uniform setters
-├── camera.hpp/.cpp — filmback/focal-length camera, LMB orbit (depth-sampled pivot)
-├── mesh.hpp/.cpp   — VAO/VBO/EBO geometry, cube/plane/sphere factories
-├── texture.hpp/.cpp— PNG/JPG/HDR loading via stb_image (RGBA8 + RGB16F)
-├── hud.hpp/.cpp    — Dear ImGui overlay, FrameStats
-├── frustum.hpp     — Gribb-Hartmann frustum planes, sphere culling test
-├── model.hpp/.cpp  — glTF 2.0 loader (cgltf), Model/SubMesh, node transform walk
-└── cgltf_impl.cpp  — cgltf single-header implementation unit
+├── main.cpp          — render loop, G-buffer, SSAO, config wiring
+├── config.hpp/.cpp   — JSON profile loader/saver (nlohmann/json, ordered)
+├── window.hpp/.cpp   — GLFW window + context (Retina-aware)
+├── shader.hpp/.cpp   — GLSL compile/link, uniform setters
+├── camera.hpp/.cpp   — filmback/focal-length camera, LMB orbit (depth-sampled pivot)
+├── mesh.hpp/.cpp     — VAO/VBO/EBO geometry, cube/plane/sphere factories
+├── texture.hpp/.cpp  — PNG/JPG/HDR loading via stb_image (RGBA8 + RGB16F)
+├── hud.hpp/.cpp      — Dear ImGui overlay (crosshair, AOV, HDRI controls, stats)
+├── menu_osx.hpp/.mm  — Native macOS menu bar via Cocoa (ObjC++ bridge)
+├── frustum.hpp       — Gribb-Hartmann frustum planes, sphere culling test
+├── model.hpp/.cpp    — glTF 2.0 loader (cgltf), Model/SubMesh, node transform walk
+└── cgltf_impl.cpp    — cgltf single-header implementation unit
 shaders/
-├── basic.vert/frag  — MVP, G-buffer MRT output, 9 view modes
-├── sky.vert/frag    — equirectangular HDRI skydome (rotation + exposure)
-├── ssao.vert/frag   — SSAO compute pass (hemisphere kernel, depth reconstruction)
-├── ssao_blur.frag   — 5×5 box blur on SSAO result
-└── blit.vert/frag   — fullscreen blit with SSAO composite
-profile.json         — runtime scene config (camera, render scale, HDRI, geometry paths)
+├── basic.vert/frag   — MVP transform, G-buffer MRT, PBR BSDF, 13 AOV modes
+├── sky.vert/frag     — equirectangular HDRI skydome (rotation, exposure, flip)
+├── ssao.vert/frag    — SSAO compute pass (64-sample kernel, depth reconstruction)
+├── ssao_blur.frag    — 5×5 box blur on raw SSAO
+└── blit.vert/frag    — fullscreen composite with SSAO multiply
+profile.json          — runtime scene config (camera, render, HDRI, scene, shading)
 ```
 
 ## Roadmap
 
-| Task | Status |
-|------|--------|
-| Hello 3D World — window, camera, primitives, diffuse shading | ✓ done |
-| Texture Loading — stb_image, UV coords, Mesh::sphere() | ✓ done |
-| Debug HUD — Dear ImGui overlay, 6 view modes, FBO render scale | ✓ done |
-| Optimisation — smooth FPS, non-stalling GPU timer, GPU-mem tracking, frustum culling | ✓ done |
-| Geometry Loading — glTF 2.0 (cgltf): meshes, materials, textures, scene hierarchy | ✓ done |
-| HDRI Skydome — equirectangular HDR sky, HDRI diffuse irradiance, linear pipeline | ✓ done |
-| Project Quality — SSAO, JSON config, render scale fix, Z-up correction, frame capture | ✓ done |
-| Orbit Camera — LMB pivot orbit, depth-sampled pivot, diffuse IBL fix, HDRI rotation | ✓ done |
-| PBR BSDF — Schlick Fresnel, IOR-derived F0, energy-conserving Ld+Ls, metallic | ✓ done |
+| Milestone | Status |
+|-----------|--------|
+| Hello 3D World — window, camera, primitives, diffuse shading | ✓ |
+| Texture Loading — stb_image, UV coords | ✓ |
+| Debug HUD — Dear ImGui overlay, view modes, FBO render scale | ✓ |
+| Optimisation — smooth FPS, GPU timer, frustum culling | ✓ |
+| Geometry Loading — glTF 2.0 via cgltf | ✓ |
+| HDRI Skydome — equirectangular sky, diffuse irradiance, linear pipeline | ✓ |
+| Project Quality — SSAO, JSON config, render scale, Z-up | ✓ |
+| Orbit Camera — LMB depth-sampled pivot, diffuse IBL fix | ✓ |
+| PBR BSDF — Schlick Fresnel, IOR-derived F0, energy-conserving Ld+Ls | ✓ |
+| GUI & Debug — native macOS menu, crosshair, HDRI controls, AOV remap | ✓ |
 | Camera & Lens Effects — exposure, bloom, DoF | planned |
 | Advanced — OpenEXR I/O, Alembic geometry caches | planned |
