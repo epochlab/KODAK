@@ -163,14 +163,51 @@ void HUD::draw(FrameStats& s) {
     // ── AOV ───────────────────────────────────────────────────
     sectionHeader("AOV");
     static const char* k_modeNames[] = {
-        "beauty", "wireframe", "bounds", "alpha", "depth", "world_pos",
-        "world_normals", "uv", "albedo", "direct_diffuse", "direct_refl",
-        "shading_normal", "ao", "fresnel", "luminance"
+        "beauty", "alpha", "luminance", "hsv",
+        "bounds", "wireframe",
+        "depth", "world_pos", "world_normals", "uv", "albedo",
+        "direct_diffuse", "direct_refl", "shading_normal", "ao", "fresnel"
     };
     int modeIdx = s.viewMode - 1;
     ImGui::SetNextItemWidth(-1.0f);
-    if (ImGui::Combo("##channel", &modeIdx, k_modeNames, 15))
+    if (ImGui::Combo("##channel", &modeIdx, k_modeNames, 16))
         s.viewMode = modeIdx + 1;
+
+    // ── Histogram ─────────────────────────────────────────────
+    if (s.histValid) {
+        sectionHeader("Histogram");
+        uint32_t peak = 1;
+        for (int c = 0; c < 3; ++c)
+            for (int b = 1; b < 255; ++b)
+                if (s.hist[c][b] > peak) peak = s.hist[c][b];
+
+        const float  W   = ImGui::GetContentRegionAvail().x;
+        const float  H   = 72.0f;
+        ImVec2       pos = ImGui::GetCursorScreenPos();
+        ImDrawList*  dl  = ImGui::GetWindowDrawList();
+
+        dl->AddRectFilled(pos, {pos.x + W, pos.y + H}, IM_COL32(18, 18, 18, 255));
+
+        const ImU32 chCol[3] = {
+            IM_COL32(220,  60,  60, 180),   // R
+            IM_COL32( 60, 200,  80, 180),   // G
+            IM_COL32( 60, 100, 220, 180),   // B
+        };
+        const int order[3] = {2, 1, 0};   // B first, G, R on top
+        const float bw = W / 256.0f;
+        for (int oi = 0; oi < 3; ++oi) {
+            int c = order[oi];
+            for (int b = 0; b < 256; ++b) {
+                float norm = sqrtf((float)s.hist[c][b] / (float)peak);
+                float bh   = norm * H;
+                float x0   = pos.x + b * bw;
+                float x1   = x0 + bw + 0.5f;
+                dl->AddRectFilled({x0, pos.y + H - bh}, {x1, pos.y + H}, chCol[c]);
+            }
+        }
+        dl->AddRect(pos, {pos.x + W, pos.y + H}, IM_COL32(60, 60, 60, 180));
+        ImGui::Dummy({W, H});
+    }
 
     // ── HDRI ──────────────────────────────────────────────────
     sectionHeader("HDRI");

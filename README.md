@@ -168,6 +168,8 @@ profile.json          — runtime scene config (camera, render, HDRI, scene, sha
 | Logging & Diagnostics — debug logging, warnings, errors, renderer statistics, screenshot metadata | ✓ |
 | Performance Profiling (GUI) — render time, rays/sec, samples/sec, memory usage | ✓ |
 | Hotkeys — RGBA channel overlay, luminance (Y), invert (I), HUD toggle (H), focal length slider | ✓ |
+| AOVs — Reorder (beauty→alpha→luminance→hsv→bounds→wireframe→…), add HSV AOV, Lightroom-style RGB histogram in HUD. | ✓ |
+| Tests - A full detailed suite of tests and professional engineering to resolve bugs errors overloads and security | planned |
 | Directory Structure — designed for future expansion, procedural development, maintainability, and clean code organization | planned |
 | Color Management — OpenEXR I/O linear pipeline, OCIO ACES workflow w/ sRGB and Rec709 viewing LUTs | planned |
 | Camera & Lens Effects — ISO, f-stop, shutter speed, DoF, focus distance, chromatic aberration, anamorphic lenses, aspect ratio, Kelvin-based lighting controls, film grain | planned |

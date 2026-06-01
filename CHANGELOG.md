@@ -4,6 +4,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [AOVs + Histogram] — 2026-06-02
+
+- **AOV reorder** — modes resequenced to group perceptual channels first: beauty → alpha → luminance → hsv → bounds → wireframe → depth → world_pos → world_normals → uv → albedo → direct_diffuse → direct_refl → shading_normal → ao → fresnel (16 total); all mode integer constants updated consistently across `basic.frag`, `blit.frag`, and `main.cpp`
+- **HSV AOV (mode 4)** — new display mode converts RGB → HSV in `blit.frag` using a branchless GLSL formulation; H mapped to red, S to green, V to blue
+- **Lightroom-style histogram** — RGB histogram widget added to the HUD below the AOV section; 256 bins per channel drawn as filled overlapping curves (B→G→R back-to-front) on a dark background with sqrt-scale normalisation for shadow/midtone detail; readback is throttled to every 4 frames via a fixed 256×144 `GL_RGB8` FBO blit, keeping overhead well under 0.1 ms average
+
+---
+
 ## [Hotkeys] — 2026-06-02
 
 - **Channel overlay hotkeys** — R/G/B toggle red, green, blue channel views as a post-composite overlay in `blit.frag` via a new `uChannelView` uniform; press the same key again to clear; works on top of any AOV
