@@ -176,7 +176,7 @@ void HUD::draw(FrameStats& s) {
     sectionHeader("HDRI");
     ImGui::SetNextItemWidth(-1.0f);
     ImGui::SliderFloat("##hdriYaw", &s.hdriYawDeg, 1.0f, 360.0f, "Y-axis  %.0f deg");
-    ImGui::Checkbox("Flip Y-Axis", &s.hdriFlipV);
+    ImGui::Checkbox("Flip Y-axis", &s.hdriFlipV);
     ImGui::Checkbox("Enable Background", &s.skyVisible);
 
     ImGui::End();
