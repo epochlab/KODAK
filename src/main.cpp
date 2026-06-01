@@ -6,7 +6,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <mach/mach.h>
 #include <stb_image_write.h>
-#include <iostream>
 #include <stdexcept>
 #include <random>
 #include <string>
@@ -21,6 +20,7 @@
 #include "frustum.hpp"
 #include "model.hpp"
 #include "config.hpp"
+#include "log.hpp"
 
 static Camera* g_camera = nullptr;
 
@@ -175,6 +175,17 @@ int main() {
         Texture skyTex(cfg.hdri.path);
         Model   geom = Model::loadGLTF(cfg.scene.geometry);
 
+        // Startup diagnostics
+        LOG_I(std::string("Renderer: ") +
+              reinterpret_cast<const char*>(glGetString(GL_RENDERER)) + "  (" +
+              reinterpret_cast<const char*>(glGetString(GL_VERSION)) + ")");
+        LOG_I("Render: " + std::to_string(BASE_W / downsample) + "x" +
+              std::to_string(BASE_H / downsample) + "  (downsample=" + std::to_string(downsample) + ")");
+        LOG_I("Geometry: " + cfg.scene.geometry + "  — " +
+              std::to_string(geom.triangleCount()) + " tris, " +
+              std::to_string(geom.vertexCount()) + " verts");
+        LOG_I("HDRI: " + cfg.hdri.path);
+
         // ── SSAO kernel (deterministic, seed 42) ───────────────────
         std::mt19937 rng(42);
         std::uniform_real_distribution<float> dist(0.0f, 1.0f);
@@ -225,12 +236,13 @@ int main() {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        // ── GPU timer ring ─────────────────────────────────────────
+        // ── GPU timer rings (geometry pass + SSAO/blit pass) ──────
         constexpr int GPU_QUERY_FRAMES = 3;
-        GLuint gpuQueries[GPU_QUERY_FRAMES];
-        bool   queryStarted[GPU_QUERY_FRAMES] = {};
+        GLuint gpuQueries[GPU_QUERY_FRAMES],     gpuPostQueries[GPU_QUERY_FRAMES];
+        bool   queryStarted[GPU_QUERY_FRAMES]{}, postQueryStarted[GPU_QUERY_FRAMES]{};
         int    queryWrite = 0;
         glGenQueries(GPU_QUERY_FRAMES, gpuQueries);
+        glGenQueries(GPU_QUERY_FRAMES, gpuPostQueries);
 
         FrameStats stats{};
         stats.hdriYawDeg = cfg.hdri.rotation.y;
@@ -360,7 +372,16 @@ int main() {
                 if (available) {
                     GLuint ns = 0;
                     glGetQueryObjectuiv(gpuQueries[queryWrite], GL_QUERY_RESULT, &ns);
-                    stats.gpuTimeMs = static_cast<float>(ns) / 1e6f;
+                    stats.gpuGeomMs = static_cast<float>(ns) / 1e6f;
+                }
+            }
+            if (postQueryStarted[queryWrite]) {
+                GLint available = 0;
+                glGetQueryObjectiv(gpuPostQueries[queryWrite], GL_QUERY_RESULT_AVAILABLE, &available);
+                if (available) {
+                    GLuint ns = 0;
+                    glGetQueryObjectuiv(gpuPostQueries[queryWrite], GL_QUERY_RESULT, &ns);
+                    stats.gpuPostMs = static_cast<float>(ns) / 1e6f;
                 }
             }
 
@@ -448,6 +469,7 @@ int main() {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
             // ── SSAO pass ─────────────────────────────────────────
+            glBeginQuery(GL_TIME_ELAPSED, gpuPostQueries[queryWrite]);
             glBindFramebuffer(GL_FRAMEBUFFER, ssaoRt.fbo);
             glViewport(0, 0, AO_W, AO_H);
             glDisable(GL_DEPTH_TEST);
@@ -480,6 +502,8 @@ int main() {
             glBindVertexArray(blitVAO);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             glBindVertexArray(0);
+            glEndQuery(GL_TIME_ELAPSED);
+            postQueryStarted[queryWrite] = true;
 
             glEnable(GL_DEPTH_TEST);
 
@@ -501,8 +525,10 @@ int main() {
             stats.drawCallsCulled = total - drawn;
             stats.totalTriangles  = geom.triangleCount();
             stats.totalVertices   = geom.vertexCount();
+            stats.triPerSec     = (stats.totalTriangles * smoothFps) / 1e6f;
             stats.width         = BASE_W;
             stats.height        = BASE_H;
+            stats.mpixPerSec    = (BASE_W * BASE_H * smoothFps) / 1e6f;
             stats.downsample    = downsample;
             stats.logicalWidth = lw; stats.logicalHeight = lh;
             stats.camPos          = camera.position();
@@ -555,7 +581,7 @@ int main() {
                               pixels.begin() + (row + 1) * stride,
                               flipped.begin() + (BASE_H - 1 - row) * stride);
                 stbi_write_png(fname.c_str(), BASE_W, BASE_H, 3, flipped.data(), stride);
-                std::cout << "Screenshot: " << fname << '\n';
+                LOG_I("Screenshot: " + fname);
                 stats.doCapture = false;
             }
 
@@ -564,7 +590,7 @@ int main() {
                 cfg.camera.yaw      = camera.yaw();
                 cfg.camera.pitch    = camera.pitch();
                 saveConfig(cfg, "profile.json");
-                std::cout << "Profile saved.\n";
+                LOG_I("Profile saved.");
                 stats.doSaveJson = false;
             }
 
@@ -579,9 +605,10 @@ int main() {
         glDeleteVertexArrays(1, &boxVAO);
         glDeleteBuffers(1, &boxVBO);
         glDeleteQueries(GPU_QUERY_FRAMES, gpuQueries);
+        glDeleteQueries(GPU_QUERY_FRAMES, gpuPostQueries);
 
     } catch (const std::exception& e) {
-        std::cerr << "Fatal: " << e.what() << '\n';
+        LOG_E(std::string("Fatal: ") + e.what());
         return 1;
     }
     return 0;

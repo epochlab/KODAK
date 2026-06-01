@@ -4,6 +4,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Logging & Diagnostics + Performance Profiling] — 2026-06-01
+
+- **Structured logger** — new `log.hpp` header-only logger with four levels (DEBUG, INFO, WARN, ERROR); output format `[HH:MM:SS] [LEVEL] message` to stderr; DEBUG suppressed in release builds
+- **Startup diagnostics** — on launch logs GL renderer/version, render resolution with downsample factor, loaded geometry (path, triangle and vertex counts), and HDRI path
+- **Replaced ad-hoc output** — all `std::cout`/`std::cerr` calls in `main.cpp` and `config.cpp` replaced with typed log calls; screenshot path and profile-save confirmation now emit `[INFO]` lines; parse and write errors emit `[WARN]`/`[ERROR]`
+- **Per-pass GPU timing** — second triple-buffered `GL_TIME_ELAPSED` query ring brackets the SSAO + blit passes; HUD Frame panel now shows `geom` and `post` GPU times separately instead of a single combined value
+- **Throughput metrics** — `triPerSec` (Mtri/s) and `mpixPerSec` (Mpix/s) computed each frame from triangle count × smooth FPS and render resolution × smooth FPS; displayed in the HUD Frame panel below the GPU timing row
+
+---
+
 ## [Build & Run] — 2026-06-01
 
 - **Single build preset** — `CMakePresets.json` consolidated to one `default` preset (Release + LTO); binary at `build/KODAK` with no `dev/` or `release/` subdirectory

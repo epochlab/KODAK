@@ -165,8 +165,8 @@ profile.json          — runtime scene config (camera, render, HDRI, scene, sha
 | Render Performance — uniform cache, CPU normal matrix, half-res SSAO, release preset | ✓ |
 | Quick fixes — world_pos AABB normalisation, bounds AOV, Sky Background menu toggle | ✓ |
 | Build & Run — single-step build and run workflow (./build/KODAK no 'dev' or 'release') | ✓ |
-| Logging & Diagnostics — debug logging, warnings, errors, renderer statistics, screenshot metadata | planned |
-| Performance Profiling (GUI) — render time, rays/sec, samples/sec, memory usage | planned |
+| Logging & Diagnostics — debug logging, warnings, errors, renderer statistics, screenshot metadata | ✓ |
+| Performance Profiling (GUI) — render time, rays/sec, samples/sec, memory usage | ✓ |
 | Color Management — OpenEXR I/O linear pipeline, ACES workflow w/ sRGB and Rec709 view LUT | planned |
 | Camera & Lens Effects — ISO, f-stop, shutter speed, DoF, focus distance, chromatic aberration, anamorphic lenses, aspect ratio, Kelvin-based lighting controls  | planned |
 | Shader update — RGB albedo color parameter (white default), indirect (self-reflection, refraction, SSS) | planned |

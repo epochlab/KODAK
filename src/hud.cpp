@@ -105,7 +105,8 @@ void HUD::draw(FrameStats& s) {
     ImGui::PlotLines("##fps", s.fpsHistory, 128, s.fpsHistoryOffset,
                      nullptr, 0.0f, 300.0f, {214.0f, 36.0f});
     ImGui::Text("min %.2f   max %.2f ms", s.frameTimeMin, s.frameTimeMax);
-    ImGui::Text("GPU   %.3f ms", s.gpuTimeMs);
+    ImGui::Text("GPU  geom %.2f  post %.2f ms", s.gpuGeomMs, s.gpuPostMs);
+    ImGui::Text("     %.1f Mtri/s  %.1f Mpix/s", s.triPerSec, s.mpixPerSec);
     if (s.frameCap > 0)
         ImGui::Text("Cap   %d fps", s.frameCap);
     else
