@@ -4,6 +4,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Hotkeys] — 2026-06-02
+
+- **Channel overlay hotkeys** — R/G/B toggle red, green, blue channel views as a post-composite overlay in `blit.frag` via a new `uChannelView` uniform; press the same key again to clear; works on top of any AOV
+- **Luminance hotkey (Y)** — toggles new AOV mode 15 (Rec. 709 luminance computed in `blit.frag`); press Y again to restore the previous AOV; also selectable from the AOV dropdown as "luminance"
+- **Invert hotkey (I)** — toggles `1.0 − color` in `blit.frag` after channel overlay; stacks with R/G/B and Y
+- **HUD toggle (H)** — edge-triggered `H` key hides/shows the stats panel
+- **Camera speed** — `moveSpeed` reduced from 2.5 to 1.25 units/sec (0.5×); no modifier key
+- **Focal length slider** — new Lens section in the HUD; 8–200 mm range, default 70 mm; live-updates the projection matrix; persisted by Save JSON
+- **Enable Background checkbox** — sky toggle added to the HDRI section of the HUD; fixed sync ordering bug that caused HUD changes to be reverted on the next frame; native menu still works bidirectionally
+- **GPU section** — moved to the top of the HUD panel
+- **HUD labels** — "Flip V" → "Flip Y-axis"; sky checkbox → "Enable Background"
+
+---
+
 ## [Logging & Diagnostics + Performance Profiling] — 2026-06-01
 
 - **Structured logger** — new `log.hpp` header-only logger with four levels (DEBUG, INFO, WARN, ERROR); output format `[HH:MM:SS] [LEVEL] message` to stderr; DEBUG suppressed in release builds

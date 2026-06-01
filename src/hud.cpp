@@ -99,6 +99,11 @@ void HUD::draw(FrameStats& s) {
 
     if (!ImGui::Begin("##hud", nullptr, flags)) { ImGui::End(); return; }
 
+    // ── GPU ───────────────────────────────────────────────────
+    sectionHeader("GPU");
+    ImGui::TextWrapped("%s", m_sys.renderer);
+    ImGui::TextColored({0.6f, 0.6f, 0.6f, 1.0f}, "GL %s", m_sys.version);
+
     // ── Frame ─────────────────────────────────────────────────
     sectionHeader("Frame");
     ImGui::Text("%.0f FPS  avg %.0f  %.2f ms", s.fps, s.fpsSmooth, s.frameTimeMs);
@@ -150,28 +155,29 @@ void HUD::draw(FrameStats& s) {
     ImGui::Text("Focal      %.1f mm", s.camFocalLengthMm);
     ImGui::Text("Near  %.2f   Far  %.1f", s.camNear, s.camFar);
 
-    // ── GPU ───────────────────────────────────────────────────
-    sectionHeader("GPU");
-    ImGui::TextWrapped("%s", m_sys.renderer);
-    ImGui::TextColored({0.6f, 0.6f, 0.6f, 1.0f}, "GL %s", m_sys.version);
+    // ── Lens ──────────────────────────────────────────────────
+    sectionHeader("Lens");
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::SliderFloat("##focalLength", &s.camFocalLengthMm, 8.0f, 200.0f, "Focal Length  %.0f mm");
 
     // ── AOV ───────────────────────────────────────────────────
     sectionHeader("AOV");
     static const char* k_modeNames[] = {
         "beauty", "wireframe", "bounds", "alpha", "depth", "world_pos",
         "world_normals", "uv", "albedo", "direct_diffuse", "direct_refl",
-        "shading_normal", "ao", "fresnel"
+        "shading_normal", "ao", "fresnel", "luminance"
     };
     int modeIdx = s.viewMode - 1;
     ImGui::SetNextItemWidth(-1.0f);
-    if (ImGui::Combo("##channel", &modeIdx, k_modeNames, 14))
+    if (ImGui::Combo("##channel", &modeIdx, k_modeNames, 15))
         s.viewMode = modeIdx + 1;
 
     // ── HDRI ──────────────────────────────────────────────────
     sectionHeader("HDRI");
     ImGui::SetNextItemWidth(-1.0f);
     ImGui::SliderFloat("##hdriYaw", &s.hdriYawDeg, 1.0f, 360.0f, "Y-axis  %.0f deg");
-    ImGui::Checkbox("Flip V", &s.hdriFlipV);
+    ImGui::Checkbox("Flip Y-axis", &s.hdriFlipV);
+    ImGui::Checkbox("Enable Background", &s.skyVisible);
 
     ImGui::End();
 }

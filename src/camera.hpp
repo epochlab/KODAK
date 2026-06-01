@@ -7,7 +7,7 @@ public:
     // filmbackMm: sensor width (36mm = full-frame). focalLengthMm: e.g. 50mm.
     Camera(glm::vec3 position, float aspect,
            float filmbackMm    = 35.0f,
-           float focalLengthMm = 50.0f,
+           float focalLengthMm = 70.0f,
            float near          = 0.1f,
            float far           = 100.0f);
 
@@ -40,7 +40,7 @@ public:
     float     filmback()      const { return m_filmbackMm; }
     float     focalLength()   const { return m_focalLengthMm; }
 
-    float moveSpeed        = 2.5f;
+    float moveSpeed        = 1.25f;
     float mouseSensitivity = 0.05f;
 
 private:

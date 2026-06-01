@@ -43,7 +43,7 @@ AppConfig loadConfig(const std::string& path) {
         cfg.camera.near        = jf(c.value("near",         json(0.1f)),  cfg.camera.near);
         cfg.camera.far         = jf(c.value("far",          json(100.f)), cfg.camera.far);
         cfg.camera.filmback    = jf(c.value("filmback",     json(35.f)),  cfg.camera.filmback);
-        cfg.camera.focalLength = jf(c.value("focalLength",  json(50.f)),  cfg.camera.focalLength);
+        cfg.camera.focalLength = jf(c.value("focalLength",  json(70.f)),  cfg.camera.focalLength);
     }
 
     if (j.contains("render")) {
