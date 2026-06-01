@@ -7,6 +7,7 @@ uniform sampler2D uAO;         // blurred SSAO result (unit 1)
 uniform sampler2D uDepth;      // G-buffer depth (unit 2) — used to mask sky in AO channel
 uniform int       uViewMode;
 uniform int       uChannelView; // 0=off 1=R 2=G 3=B  (applied post-composite)
+uniform bool      uInvert;      // invert colour values
 
 out vec4 FragColor;
 
@@ -29,6 +30,7 @@ void main() {
         if      (uChannelView == 1) color = vec3(color.r);
         else if (uChannelView == 2) color = vec3(color.g);
         else if (uChannelView == 3) color = vec3(color.b);
+        if (uInvert) color = 1.0 - color;
         FragColor = vec4(color, 1.0);
     }
 }

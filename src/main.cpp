@@ -252,7 +252,8 @@ int main() {
         int    viewMode    = 1;
         int    channelView = 0;   // 0=off 1=R 2=G 3=B
         int    preLumMode  = 1;   // viewMode saved before entering luminance (mode 15)
-        struct { bool r, g, b, y, h; } prevKeys{};
+        bool   invertColors = false;
+        struct { bool r, g, b, y, h, i; } prevKeys{};
         bool   prevLMB    = false;
         float  smoothFps  = 0.0f;
         double lastTime   = glfwGetTime();
@@ -346,6 +347,7 @@ int main() {
                     else { preLumMode = viewMode; viewMode = 15; }
                 }
                 if (edge(GLFW_KEY_H, prevKeys.h)) stats.showPanel = !stats.showPanel;
+                if (edge(GLFW_KEY_I, prevKeys.i)) invertColors = !invertColors;
             }
 
             // ── LMB: sample pivot at screen centre, then orbit ────────
@@ -516,6 +518,7 @@ int main() {
             blitShader.use();
             blitShader.set("uViewMode",    viewMode);
             blitShader.set("uChannelView", channelView);
+            blitShader.set("uInvert",      invertColors);
             glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, rt.colorTex);
             glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, blurRt.tex);
             glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, rt.depthTex);
