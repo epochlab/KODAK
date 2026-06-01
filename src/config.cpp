@@ -1,7 +1,7 @@
 #include "config.hpp"
+#include "log.hpp"
 #include <nlohmann/json.hpp>
 #include <fstream>
-#include <iostream>
 
 using json = nlohmann::json;
 
@@ -24,14 +24,14 @@ AppConfig loadConfig(const std::string& path) {
     AppConfig cfg;
     std::ifstream f(path);
     if (!f.is_open()) {
-        std::cout << "profile.json not found — using defaults\n";
+        LOG_I("profile.json not found — using defaults");
         return cfg;
     }
 
     json j;
     try { f >> j; }
     catch (const json::exception& e) {
-        std::cerr << "profile.json parse error: " << e.what() << " — using defaults\n";
+        LOG_W(std::string("profile.json parse error: ") + e.what() + " — using defaults");
         return cfg;
     }
 
@@ -125,5 +125,5 @@ void saveConfig(const AppConfig& cfg, const std::string& path) {
     if (f.is_open())
         f << j.dump(2) << '\n';
     else
-        std::cerr << "saveConfig: could not write " << path << '\n';
+        LOG_E("saveConfig: could not write " + path);
 }
