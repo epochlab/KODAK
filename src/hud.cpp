@@ -108,8 +108,18 @@ void HUD::draw(FrameStats& s) {
     // ── Frame ─────────────────────────────────────────────────
     sectionHeader("Frame");
     ImGui::Text("%.0f FPS  avg %.0f  %.2f ms", s.fps, s.fpsSmooth, s.frameTimeMs);
-    ImGui::PlotLines("##fps", s.fpsHistory, 128, s.fpsHistoryOffset,
-                     nullptr, 0.0f, 300.0f, {214.0f, 36.0f});
+    {
+        constexpr float kFpsMax = 300.0f;
+        constexpr ImVec2 kGraphSz{214.0f, 36.0f};
+        ImVec2 gp = ImGui::GetCursorScreenPos();
+        ImGui::PlotLines("##fps", s.fpsHistory, 128, s.fpsHistoryOffset,
+                         nullptr, 0.0f, kFpsMax, kGraphSz);
+        if (s.fpsSmooth > 0.0f) {
+            float y = gp.y + kGraphSz.y * (1.0f - std::min(s.fpsSmooth, kFpsMax) / kFpsMax);
+            ImGui::GetWindowDrawList()->AddLine(
+                {gp.x, y}, {gp.x + kGraphSz.x, y}, IM_COL32(220, 60, 60, 200), 1.0f);
+        }
+    }
     ImGui::Text("min %.2f   max %.2f ms", s.frameTimeMin, s.frameTimeMax);
     ImGui::Text("GPU  geom %.2f  post %.2f ms", s.gpuGeomMs, s.gpuPostMs);
     ImGui::Text("     %.1f Mtri/s  %.1f Mpix/s", s.triPerSec, s.mpixPerSec);
