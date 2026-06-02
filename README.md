@@ -176,7 +176,7 @@ profile.json          — runtime scene config (camera, render, HDRI, scene, sha
 | Logging & Diagnostics — debug logging, warnings, errors, renderer statistics, screenshot metadata | ✓ |
 | Performance Profiling (GUI) — render time, rays/sec, samples/sec, memory usage | ✓ |
 | Hotkeys — RGBA channel overlay, luminance (Y), invert (I), HUD toggle (H), focal length slider | ✓ |
-| AOVs — Reorder (beauty→alpha→luminance→hsv→bounds→wireframe→…), add HSV AOV, Lightroom-style RGB histogram in HUD. 2-channel AOV support (UV/Fresnel), histogram artefact fixes (diagonal fringe, endpoint spikes), FPS graph avg overlay. | ✓ |
+| AOVs — Reorder, add HSV AOV, RGB histogram in HUD. 2-channel AOV support (UV/Fresnel), histogram artefact fixes (diagonal fringe, endpoint spikes), FPS graph avg overlay. | ✓ |
 | HUD - Panel Tabs (1: Viewport, Scene 2: Camera, Lens, HDRI 3: AOV, Histogram 4: GPU, Frame, Memory) | planned |
 | Directory Structure — designed for future expansion, procedural development, maintainability, and clean code organization | planned |
 | Tests - A full detailed suite of tests and professional engineering to resolve bugs errors overloads and security | planned |
