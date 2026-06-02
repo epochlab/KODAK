@@ -435,6 +435,10 @@ int main() {
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glPolygonMode(GL_FRONT_AND_BACK, viewMode == 6 ? GL_LINE : GL_FILL);
+            if (viewMode == 6) {
+                glEnable(GL_POLYGON_OFFSET_LINE);
+                glPolygonOffset(-1.0f, -1.0f);
+            }
 
             shader.use();
             shader.set("uView",            view);
@@ -502,6 +506,7 @@ int main() {
             queryWrite = (queryWrite + 1) % GPU_QUERY_FRAMES;
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glDisable(GL_POLYGON_OFFSET_LINE);
 
             // ── SSAO pass ─────────────────────────────────────────
             glBeginQuery(GL_TIME_ELAPSED, gpuPostQueries[queryWrite]);

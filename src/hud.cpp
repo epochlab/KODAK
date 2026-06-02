@@ -194,13 +194,10 @@ void HUD::draw(FrameStats& s) {
         // Grayscale: full 256-bin peak, no smoothing — preserves spikes at 0/255 (alpha, depth).
         // Colour: interior-only peak + 9-bin smooth — avoids clipping bins dominating scale.
         float smooth[3][256];
-        // Helper: smooth a single channel into smooth[c] — 3-bin window.
-        // 3-bin at ~0.9 px/bin is indistinguishable from 9-bin for smooth distributions
-        // but keeps sparse spikes (wireframe) at 1/3 height instead of 1/9.
         auto smoothChannel = [&](int c, uint32_t peak) {
             for (int b = 0; b < 256; ++b) {
                 float sum = 0.0f; int cnt = 0;
-                for (int k = b - 1; k <= b + 1; ++k) {
+                for (int k = b - 4; k <= b + 4; ++k) {
                     if (k < 0 || k > 255) continue;
                     sum += sqrtf(float(std::min(s.hist[c][k], peak)) / float(peak));
                     ++cnt;
