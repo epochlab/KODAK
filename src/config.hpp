@@ -44,8 +44,8 @@ struct AppConfig {
     } scene;
 };
 
-// Returns defaults when the file is absent or a key is missing.
-AppConfig loadConfig(const std::string& path);
+// Returns defaults when either file is absent or a key is missing.
+AppConfig loadConfig(const std::string& profilePath, const std::string& scenePath);
 
-// Writes cfg back to path, preserving JSON field order.
-void saveConfig(const AppConfig& cfg, const std::string& path);
+// Updates camera position/focal length and HDRI rotation in scenePath (read-modify-write).
+void saveConfig(const AppConfig& cfg, const std::string& scenePath);

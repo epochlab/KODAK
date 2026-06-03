@@ -202,7 +202,7 @@ int Model::triangleCount() const {
     return total;
 }
 
-int Model::vertexCount() const {
+int Model::indexCount() const {
     int total = 0;
     for (const SubMesh& sm : m_submeshes) total += sm.mesh.indexCount();
     return total;

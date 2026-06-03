@@ -115,7 +115,7 @@ int main() {
     try {
         constexpr int FRAME_CAP = 0;  // 0 = vsync/unlimited
 
-        AppConfig cfg = loadConfig("profile.json");
+        AppConfig cfg = loadConfig("profile.json", "scene.json");
         const int BASE_W      = cfg.render.width  > 0 ? cfg.render.width  : 2048;
         const int BASE_H      = cfg.render.height > 0 ? cfg.render.height : 1152;
         const int downsample  = cfg.render.downsample > 0 ? cfg.render.downsample : 2;
@@ -183,7 +183,7 @@ int main() {
               std::to_string(BASE_H / downsample) + "  (downsample=" + std::to_string(downsample) + ")");
         LOG_I("Geometry: " + cfg.scene.geometry + "  — " +
               std::to_string(geom.triangleCount()) + " tris, " +
-              std::to_string(geom.vertexCount()) + " verts");
+              std::to_string(geom.indexCount()) + " indices");
         LOG_I("HDRI: " + cfg.hdri.path);
 
         // ── SSAO kernel (deterministic, seed 42) ───────────────────
@@ -590,7 +590,7 @@ int main() {
             stats.drawCallsTotal  = total;
             stats.drawCallsCulled = total - drawn;
             stats.totalTriangles  = geom.triangleCount();
-            stats.totalVertices   = geom.vertexCount();
+            stats.totalIndices    = geom.indexCount();
             stats.triPerSec     = (stats.totalTriangles * smoothFps) / 1e6f;
             stats.width         = BASE_W;
             stats.height        = BASE_H;
@@ -610,7 +610,7 @@ int main() {
             stats.hdriFlipV       = cfg.hdri.flipV;
             stats.skyVisible      = skyVisible;
             stats.numObjects      = 1;
-            stats.objects[0]      = {geom.name().c_str(), geom.triangleCount(), geom.vertexCount()};
+            stats.objects[0]      = {geom.name().c_str(), geom.triangleCount(), geom.indexCount()};
 
             hud.beginFrame();
             hud.draw(stats);
@@ -653,11 +653,9 @@ int main() {
 
             if (stats.doSaveJson) {
                 cfg.camera.position    = camera.position();
-                cfg.camera.yaw         = camera.yaw();
-                cfg.camera.pitch       = camera.pitch();
                 cfg.camera.focalLength = camera.focalLength();
-                saveConfig(cfg, "profile.json");
-                LOG_I("Profile saved.");
+                saveConfig(cfg, "scene.json");
+                LOG_I("Scene saved.");
                 stats.doSaveJson = false;
             }
 

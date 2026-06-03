@@ -26,7 +26,7 @@ public:
     glm::vec3        boundsMin()      const { return m_boundsMin; }
     glm::vec3        boundsMax()      const { return m_boundsMax; }
     int              triangleCount()  const;
-    int              vertexCount()    const;
+    int              indexCount()     const;
 
     Model(const Model&)            = delete;
     Model& operator=(const Model&) = delete;

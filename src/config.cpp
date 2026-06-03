@@ -20,112 +20,102 @@ static glm::vec3 jvec3(const json& j, glm::vec3 def) {
     return def;
 }
 
-AppConfig loadConfig(const std::string& path) {
-    AppConfig cfg;
+static json openJson(const std::string& path, const char* label) {
     std::ifstream f(path);
     if (!f.is_open()) {
-        LOG_I("profile.json not found — using defaults");
-        return cfg;
+        LOG_I(std::string(label) + " not found — using defaults");
+        return json{};
     }
-
     json j;
     try { f >> j; }
     catch (const json::exception& e) {
-        LOG_W(std::string("profile.json parse error: ") + e.what() + " — using defaults");
-        return cfg;
+        LOG_W(std::string(label) + " parse error: " + e.what() + " — using defaults");
+        return json{};
     }
+    return j;
+}
 
-    if (j.contains("camera")) {
-        const auto& c = j["camera"];
-        cfg.camera.position    = jvec3(c.value("position", json::array({0,1,10})), cfg.camera.position);
-        cfg.camera.yaw         = jf(c.value("yaw",          json(-90.f)), cfg.camera.yaw);
-        cfg.camera.pitch       = jf(c.value("pitch",        json(0.f)),   cfg.camera.pitch);
-        cfg.camera.near        = jf(c.value("near",         json(0.1f)),  cfg.camera.near);
-        cfg.camera.far         = jf(c.value("far",          json(100.f)), cfg.camera.far);
-        cfg.camera.filmback    = jf(c.value("filmback",     json(35.f)),  cfg.camera.filmback);
-        cfg.camera.focalLength = jf(c.value("focalLength",  json(70.f)),  cfg.camera.focalLength);
-    }
+AppConfig loadConfig(const std::string& profilePath, const std::string& scenePath) {
+    AppConfig cfg;
 
-    if (j.contains("render")) {
-        const auto& r = j["render"];
+    // ── profile.json: renderer settings ──────────────────────────
+    json p = openJson(profilePath, "profile.json");
+
+    if (p.contains("render")) {
+        const auto& r = p["render"];
         cfg.render.downsample = ji(r.value("downsample", json(2)),    cfg.render.downsample);
         cfg.render.iblSamples = ji(r.value("iblSamples", json(16)),   cfg.render.iblSamples);
         cfg.render.width      = ji(r.value("width",      json(2048)), cfg.render.width);
         cfg.render.height     = ji(r.value("height",     json(1152)), cfg.render.height);
     }
 
-    if (j.contains("shading")) {
-        const auto& s = j["shading"];
-        cfg.shading.roughness      = jf(s.value("roughness",      json(0.3f)),  cfg.shading.roughness);
-        cfg.shading.ssaoRadius     = jf(s.value("ssaoRadius",     json(0.5f)),  cfg.shading.ssaoRadius);
-        cfg.shading.ssaoBias       = jf(s.value("ssaoBias",       json(0.025f)),cfg.shading.ssaoBias);
-        cfg.shading.ssaoBlurRadius = ji(s.value("ssaoBlurRadius", json(2)),     cfg.shading.ssaoBlurRadius);
-        cfg.shading.ssaoHalfRes    = jb(s.value("ssaoHalfRes",   json(false)), cfg.shading.ssaoHalfRes);
-        cfg.shading.metallic       = jf(s.value("metallic",       json(0.0f)),  cfg.shading.metallic);
-        cfg.shading.ior            = jf(s.value("ior",            json(1.5f)),  cfg.shading.ior);
+    if (p.contains("shading")) {
+        const auto& s = p["shading"];
+        cfg.shading.ior            = jf(s.value("ior",            json(1.5f)),   cfg.shading.ior);
+        cfg.shading.ssaoRadius     = jf(s.value("ssaoRadius",     json(0.5f)),   cfg.shading.ssaoRadius);
+        cfg.shading.ssaoBias       = jf(s.value("ssaoBias",       json(0.025f)), cfg.shading.ssaoBias);
+        cfg.shading.ssaoBlurRadius = ji(s.value("ssaoBlurRadius", json(2)),      cfg.shading.ssaoBlurRadius);
+        cfg.shading.ssaoHalfRes    = jb(s.value("ssaoHalfRes",    json(false)),  cfg.shading.ssaoHalfRes);
     }
 
-    if (j.contains("hdri")) {
-        const auto& h = j["hdri"];
+    // ── scene.json: camera, geometry, HDRI, material overrides ───
+    json sc = openJson(scenePath, "scene.json");
+
+    if (sc.contains("camera")) {
+        const auto& c = sc["camera"];
+        cfg.camera.position    = jvec3(c.value("position", json::array({0,1,10})), cfg.camera.position);
+        cfg.camera.yaw         = jf(c.value("yaw",         json(-90.f)), cfg.camera.yaw);
+        cfg.camera.pitch       = jf(c.value("pitch",       json(0.f)),   cfg.camera.pitch);
+        cfg.camera.near        = jf(c.value("near",        json(0.1f)),  cfg.camera.near);
+        cfg.camera.far         = jf(c.value("far",         json(100.f)), cfg.camera.far);
+        cfg.camera.filmback    = jf(c.value("filmback",    json(35.f)),  cfg.camera.filmback);
+        cfg.camera.focalLength = jf(c.value("focalLength", json(70.f)),  cfg.camera.focalLength);
+    }
+
+    if (sc.contains("hdri")) {
+        const auto& h = sc["hdri"];
         if (h.contains("path") && h["path"].is_string()) cfg.hdri.path = h["path"].get<std::string>();
         cfg.hdri.rotation = jvec3(h.value("rotation", json::array({0,0,0})), cfg.hdri.rotation);
         cfg.hdri.visible  = jb(h.value("visible",  json(true)),  cfg.hdri.visible);
         cfg.hdri.exposure = jf(h.value("exposure", json(1.f)),   cfg.hdri.exposure);
-        cfg.hdri.flipV    = jb(h.value("flipV",    json(false)),  cfg.hdri.flipV);
+        cfg.hdri.flipV    = jb(h.value("flipV",    json(false)), cfg.hdri.flipV);
     }
 
-    if (j.contains("scene")) {
-        const auto& s = j["scene"];
+    if (sc.contains("scene")) {
+        const auto& s = sc["scene"];
         if (s.contains("geometry") && s["geometry"].is_string())
             cfg.scene.geometry = s["geometry"].get<std::string>();
         cfg.scene.rotation = jvec3(s.value("rotation", json::array({0,0,0})), cfg.scene.rotation);
     }
 
+    if (sc.contains("shading")) {
+        const auto& s = sc["shading"];
+        cfg.shading.roughness = jf(s.value("roughness", json(0.3f)), cfg.shading.roughness);
+        cfg.shading.metallic  = jf(s.value("metallic",  json(0.0f)), cfg.shading.metallic);
+    }
+
     return cfg;
 }
 
-void saveConfig(const AppConfig& cfg, const std::string& path) {
+void saveConfig(const AppConfig& cfg, const std::string& scenePath) {
     using ojson = nlohmann::ordered_json;
-    ojson j;
-    j["camera"] = ojson{
-        {"position",    ojson{cfg.camera.position.x, cfg.camera.position.y, cfg.camera.position.z}},
-        {"yaw",         cfg.camera.yaw},
-        {"pitch",       cfg.camera.pitch},
-        {"near",        cfg.camera.near},
-        {"far",         cfg.camera.far},
-        {"filmback",    cfg.camera.filmback},
-        {"focalLength", cfg.camera.focalLength}
-    };
-    j["render"] = ojson{
-        {"width",      cfg.render.width},
-        {"height",     cfg.render.height},
-        {"downsample", cfg.render.downsample},
-        {"iblSamples", cfg.render.iblSamples}
-    };
-    j["hdri"] = ojson{
-        {"path",     cfg.hdri.path},
-        {"exposure", cfg.hdri.exposure},
-        {"rotation", ojson{cfg.hdri.rotation.x, cfg.hdri.rotation.y, cfg.hdri.rotation.z}},
-        {"visible",  cfg.hdri.visible},
-        {"flipV",    cfg.hdri.flipV}
-    };
-    j["scene"] = ojson{
-        {"geometry", cfg.scene.geometry},
-        {"rotation", ojson{cfg.scene.rotation.x, cfg.scene.rotation.y, cfg.scene.rotation.z}}
-    };
-    j["shading"] = ojson{
-        {"roughness",      cfg.shading.roughness},
-        {"metallic",       cfg.shading.metallic},
-        {"ior",            cfg.shading.ior},
-        {"ssaoRadius",     cfg.shading.ssaoRadius},
-        {"ssaoBias",       cfg.shading.ssaoBias},
-        {"ssaoBlurRadius", cfg.shading.ssaoBlurRadius},
-        {"ssaoHalfRes",    cfg.shading.ssaoHalfRes}
-    };
 
-    std::ofstream f(path);
+    // Read-modify-write: preserve all other fields in scene.json.
+    ojson sc;
+    {
+        std::ifstream f(scenePath);
+        if (f.is_open()) {
+            try { f >> sc; } catch (...) {}
+        }
+    }
+
+    sc["camera"]["position"]    = ojson{cfg.camera.position.x, cfg.camera.position.y, cfg.camera.position.z};
+    sc["camera"]["focalLength"] = cfg.camera.focalLength;
+    sc["hdri"]["rotation"]      = ojson{cfg.hdri.rotation.x, cfg.hdri.rotation.y, cfg.hdri.rotation.z};
+
+    std::ofstream f(scenePath);
     if (f.is_open())
-        f << j.dump(2) << '\n';
+        f << sc.dump(2) << '\n';
     else
-        LOG_E("saveConfig: could not write " + path);
+        LOG_E("saveConfig: could not write " + scenePath);
 }
