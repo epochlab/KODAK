@@ -72,6 +72,34 @@ Fetched automatically by CMake:
 
 OpenGL, Cocoa, stb_image, and stb_image_write are provided by the macOS system frameworks and committed headers respectively.
 
+## Testing
+
+```bash
+# Configure + build (includes tests_kodak binary)
+cmake --preset default && cmake --build --preset default -j
+
+# Run all 91 tests via CTest
+ctest --preset default --output-on-failure
+
+# Run directly for coloured ✓ / ✗ output per test
+./build/tests_kodak
+```
+
+Tests run headless — no display or GPU session required. Each test case registers individually in CTest so `ctest -R <pattern>` filters by name (e.g. `ctest -R Camera`).
+
+| Suite | Tests | Coverage |
+|-------|-------|---------|
+| Config | 7 | JSON load/save, per-key defaults, malformed input, round-trip |
+| Camera | 9 | FOV from filmback/focal length, projection depth terms, viewMatrix orthonormality, front direction, pitch clamp |
+| Frustum | 8 | Plane extraction, unit-length normals, sphere inside/outside/boundary |
+| Mesh | 6 | Bounding radius, AABB, index/triangle counts, move semantics |
+| Shader | 4 | Compile success, syntax error throws, missing file throws |
+| Texture | 5 | `white()` and `flatNormal()` pixel correctness, bind unit, move semantics |
+| PBR math | 11 | Schlick Fresnel, Smith G masking, IOR→F0, metallic blend, energy conservation |
+| AOV modes | 16 | All 16 view modes verified by rendering to a 1×1 FBO and reading back the pixel |
+| SSAO math | 11 | Depth reconstruction round-trip, smoothstep range check, kernel hemisphere/determinism |
+| CPU math | 20 | EMA FPS, HDRI Euler rotation, histogram triangle kernel, sqrt normalisation, grayscale/near-binary detection, frame-time min/max |
+
 ## Architecture
 
 ```
@@ -116,34 +144,6 @@ profile.json                — renderer config (resolution, IBL samples, SSAO, 
 scene.json                  — scene content (camera, HDRI, geometry, material overrides)
 ```
 
-## Testing
-
-```bash
-# Configure + build (includes tests_kodak binary)
-cmake --preset default && cmake --build --preset default -j
-
-# Run all 91 tests via CTest
-ctest --preset default --output-on-failure
-
-# Run directly for coloured ✓ / ✗ output per test
-./build/tests_kodak
-```
-
-Tests run headless — no display or GPU session required. Each test case registers individually in CTest so `ctest -R <pattern>` filters by name (e.g. `ctest -R Camera`).
-
-| Suite | Tests | Coverage |
-|-------|-------|---------|
-| Config | 7 | JSON load/save, per-key defaults, malformed input, round-trip |
-| Camera | 9 | FOV from filmback/focal length, projection depth terms, viewMatrix orthonormality, front direction, pitch clamp |
-| Frustum | 8 | Plane extraction, unit-length normals, sphere inside/outside/boundary |
-| Mesh | 6 | Bounding radius, AABB, index/triangle counts, move semantics |
-| Shader | 4 | Compile success, syntax error throws, missing file throws |
-| Texture | 5 | `white()` and `flatNormal()` pixel correctness, bind unit, move semantics |
-| PBR math | 11 | Schlick Fresnel, Smith G masking, IOR→F0, metallic blend, energy conservation |
-| AOV modes | 16 | All 16 view modes verified by rendering to a 1×1 FBO and reading back the pixel |
-| SSAO math | 11 | Depth reconstruction round-trip, smoothstep range check, kernel hemisphere/determinism |
-| CPU math | 20 | EMA FPS, HDRI Euler rotation, histogram triangle kernel, sqrt normalisation, grayscale/near-binary detection, frame-time min/max |
-
 ## Roadmap
 
 | Task | Status |
@@ -167,13 +167,14 @@ Tests run headless — no display or GPU session required. Each test case regist
 | AOVs — Reorder, add HSV AOV, RGB histogram in HUD. 2-channel AOV support (UV/Fresnel), histogram artefact fixes (diagonal fringe, endpoint spikes), FPS graph avg overlay. | ✓ |
 | Directory Structure — domain-based layout: core/, render/, camera/, ui/ | ✓ |
 | Tests — Catch2 v3 suite, 91 tests / 571 assertions, PBR math, all 16 AOVs, SSAO, CPU math, headless GL | ✓ |
-| HUD: Waveform, AOV min/max (Depth), 2D groundplane, overlay - cross, camera square, aspect safe zones, grid (3x3 with sub-lines which are darker) | planned |
+| Performance profiling and optimisation - Frame-time breakdowns, render-path benchmarking, CPU/GPU bottleneck analysis, histogram/HUD profiling, GPU acceleration (histograms, AOV reductions, post-processing), IBL sampling, BVH and visibility culling, memory and buffer optimisation, asynchronous updates, OpenGL batching, and benchmark scene regression testing | planned |
 | Color Management — OpenEXR I/O linear pipeline, OCIO ACES workflow w/ sRGB and Rec709 viewing LUTs | planned |
-| Camera & Lens Effects — ISO, f-stop, shutter speed, DoF, focus distance, chromatic aberration, anamorphic lenses, aspect ratio, Kelvin-based lighting controls, film grain | planned |
+| Camera & Lens Effects — ISO, f-stop, shutter speed, focus distance (DoF), chromatic aberration, anamorphic lenses, aspect ratio, Kelvin-based lighting controls, film grain | planned |
 | Shader update — RGB albedo color parameter (white default), indirect (self-reflection, refraction, SSS) | planned |
 | Ray Tracing — shadows, area lights, indirect illumination, brute-force path tracing | planned |
 | Sampling — adaptive sampling, multiple importance sampling (MIS) | planned |
 | Displacement: Height map, Disp. bounds, OpenSubD | planned |
 | Geometry & Shader Library — reusable assets, camera presets, and materials files and presets, scene import/export | planned |
 | Test Scenes — teapot, cornell box, three-sphere material test with curved backdrop | planned |
+| HUD: Waveform, AOV min/max (Depth), 2D groundplane, overlay - cross, camera square, aspect safe zones, grid (3x3 with sub-lines which are darker) | planned |
 | Future Features — 2d groundplane, alembic (cam and geo), turntable, macbeth ColorChecker, diffusion rendering, cross-platform support (NVIDIA and Apple Silicon) | planned |
