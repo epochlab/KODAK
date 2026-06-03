@@ -353,19 +353,28 @@ int main(int argc, char** argv) {
         glEnableVertexAttribArray(0);
         glBindVertexArray(0);
 
+        glm::vec3 cachedHdriAngles(std::numeric_limits<float>::max());
+        glm::mat3 cachedHdriRot(1.f);
+        bool      hdriDirty = false;
+
         while (!win.shouldClose()) {
             double now = glfwGetTime();
             float  dt  = static_cast<float>(now - lastTime);
             lastTime   = now;
 
-            const glm::vec3 hdriRotRad(
-                glm::radians(cfg.hdri.rotation.x),
-                glm::radians(cfg.hdri.rotation.y),
-                glm::radians(cfg.hdri.rotation.z));
-            const glm::mat3 hdriRotMat = glm::mat3(
-                glm::rotate(glm::mat4(1.f), hdriRotRad.z, glm::vec3(0,0,1)) *
-                glm::rotate(glm::mat4(1.f), hdriRotRad.y, glm::vec3(0,1,0)) *
-                glm::rotate(glm::mat4(1.f), hdriRotRad.x, glm::vec3(1,0,0)));
+            hdriDirty = (cfg.hdri.rotation != cachedHdriAngles);
+            if (hdriDirty) {
+                const glm::vec3 hdriRotRad(
+                    glm::radians(cfg.hdri.rotation.x),
+                    glm::radians(cfg.hdri.rotation.y),
+                    glm::radians(cfg.hdri.rotation.z));
+                cachedHdriRot = glm::mat3(
+                    glm::rotate(glm::mat4(1.f), hdriRotRad.z, glm::vec3(0,0,1)) *
+                    glm::rotate(glm::mat4(1.f), hdriRotRad.y, glm::vec3(0,1,0)) *
+                    glm::rotate(glm::mat4(1.f), hdriRotRad.x, glm::vec3(1,0,0)));
+                cachedHdriAngles = cfg.hdri.rotation;
+            }
+            const glm::mat3& hdriRotMat = cachedHdriRot;
 
             if (glfwGetKey(win.handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
                 glfwSetWindowShouldClose(win.handle(), GLFW_TRUE);
@@ -488,7 +497,7 @@ int main(int argc, char** argv) {
             shader.set("uNear",            camera.nearPlane());
             shader.set("uFar",             camera.farPlane());
             shader.set("uHdriExposure",    cfg.hdri.exposure);
-            shader.set("uHdriRotMat",      hdriRotMat);
+            if (hdriDirty) shader.set("uHdriRotMat", hdriRotMat);
             shader.set("uHdriFlipV",       cfg.hdri.flipV);
             shader.set("uCamPos",          camera.position());
             shader.set("uRoughness",       cfg.shading.roughness);
@@ -509,7 +518,7 @@ int main(int argc, char** argv) {
                 glDepthMask(GL_FALSE);
                 skyShader.use();
                 skyShader.set("uInvVP",        invVP);
-                skyShader.set("uHdriRotMat",   hdriRotMat);
+                if (hdriDirty) skyShader.set("uHdriRotMat", hdriRotMat);
                 skyShader.set("uHdriExposure", cfg.hdri.exposure);
                 skyShader.set("uHdriFlipV",    cfg.hdri.flipV);
                 skyTex.bind(0);

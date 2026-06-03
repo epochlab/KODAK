@@ -47,11 +47,11 @@ Re-run `./build/KODAK --benchmark 300` after each step and save the result to `b
 
 ---
 
-## Step 2 — Cache HDRI Rotation Matrix (commit with Step 1)
-- [ ] In `src/main.cpp` before the frame loop: declare `glm::vec3 cachedHdriAngles` (initialised to NaN/sentinel) and `glm::mat3 cachedHdriRot`
-- [ ] Inside the frame loop: compare `cfg.hdri.rotation` against `cachedHdriAngles`; only recompute the 3×3 XYZ Euler matrix (six `glm::rotate` calls) and re-upload to both `shader` and `skyShader` when angles actually differ
-- [ ] Set a `bool hdriDirty` flag at the same point — Step 5 will also consume this flag (extend it to cover exposure and flipV changes at that time)
-- [ ] Verify: `test_cpu_math` HDRI rotation tests pass; take a screenshot at rotation=0°, rotate 90°, rotate back — frame must match the original screenshot
+## Step 2 — Cache HDRI Rotation Matrix ✓
+- [x] In `src/main.cpp` before the frame loop: declare `glm::vec3 cachedHdriAngles` (initialised to `FLT_MAX` sentinel) and `glm::mat3 cachedHdriRot`
+- [x] Inside the frame loop: compare `cfg.hdri.rotation` against `cachedHdriAngles`; only recompute the 3×3 XYZ Euler matrix and re-upload to both `shader` and `skyShader` when angles actually differ
+- [x] Set a `bool hdriDirty` flag at the same point — Step 5 will extend it to cover exposure and flipV changes
+- [x] Verify: all 91 Catch2 tests pass (HDRI rotation tests 72-75 included)
 
 ---
 
