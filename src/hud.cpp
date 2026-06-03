@@ -78,7 +78,7 @@ void HUD::draw(FrameStats& s) {
         float        y    = pad;
 
         auto drawLabel = [&](const char* text, ImU32 col) {
-            ImVec2 sz = ImGui::CalcTextSize(text);
+            ImVec2 sz = font->CalcTextSizeA(fs, FLT_MAX, 0.0f, text);
             dl->AddText(font, fs, {disp.x - sz.x - pad, y}, col, text);
             y += fs + 2.0f;
         };
