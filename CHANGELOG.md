@@ -4,6 +4,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [SSAO Full-Res] — 2026-06-03
+
+- **SSAO restored to full resolution** — render targets (`ssaoRt`, `blurRt`) and the SSAO/blur viewport now run at `BASE_W × BASE_H` by default, eliminating the half-res downsample and its implicit bilinear upsample artefacts
+- **`ssaoHalfRes` profile flag** — set `"ssaoHalfRes": true` in `profile.json` to opt back into half-resolution SSAO (previous behaviour); `false` (default) gives full-res
+
+---
+
 ## [Channel Mode Overlay] — 2026-06-03
 
 - **R/G/B viewport indicator** — active channel isolation is shown as a coloured text label (R in red, G in green, B in blue) in the top-right corner of the viewport; nothing rendered when in full RGB mode; always visible regardless of HUD panel state

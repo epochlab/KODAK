@@ -60,6 +60,7 @@ AppConfig loadConfig(const std::string& path) {
         cfg.shading.ssaoRadius     = jf(s.value("ssaoRadius",     json(0.5f)),  cfg.shading.ssaoRadius);
         cfg.shading.ssaoBias       = jf(s.value("ssaoBias",       json(0.025f)),cfg.shading.ssaoBias);
         cfg.shading.ssaoBlurRadius = ji(s.value("ssaoBlurRadius", json(2)),     cfg.shading.ssaoBlurRadius);
+        cfg.shading.ssaoHalfRes    = jb(s.value("ssaoHalfRes",   json(false)), cfg.shading.ssaoHalfRes);
         cfg.shading.metallic       = jf(s.value("metallic",       json(0.0f)),  cfg.shading.metallic);
         cfg.shading.ior            = jf(s.value("ior",            json(1.5f)),  cfg.shading.ior);
     }
@@ -118,7 +119,8 @@ void saveConfig(const AppConfig& cfg, const std::string& path) {
         {"ior",            cfg.shading.ior},
         {"ssaoRadius",     cfg.shading.ssaoRadius},
         {"ssaoBias",       cfg.shading.ssaoBias},
-        {"ssaoBlurRadius", cfg.shading.ssaoBlurRadius}
+        {"ssaoBlurRadius", cfg.shading.ssaoBlurRadius},
+        {"ssaoHalfRes",    cfg.shading.ssaoHalfRes}
     };
 
     std::ofstream f(path);
