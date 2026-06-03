@@ -3,7 +3,7 @@
     "width": 2048,
     "height": 1152,
     "downsample": 2,
-    "iblSamples": 16
+    "iblSamples": 8
   },
   "shading": {
     "ior": 1.5,
