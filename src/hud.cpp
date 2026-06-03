@@ -68,6 +68,26 @@ void HUD::draw(FrameStats& s) {
     }
     if (tMax > 0.0f) { s.frameTimeMin = tMin; s.frameTimeMax = tMax; }
 
+    // ── Channel / invert mode label — top-right, always visible when active ──
+    {
+        ImDrawList*  dl   = ImGui::GetForegroundDrawList();
+        ImVec2       disp = ImGui::GetIO().DisplaySize;
+        ImFont*      font = ImGui::GetFont();
+        const float  fs   = ImGui::GetFontSize() + 5.0f;
+        const float  pad  = 15.0f;
+        float        y    = pad;
+
+        auto drawLabel = [&](const char* text, ImU32 col) {
+            ImVec2 sz = font->CalcTextSizeA(fs, FLT_MAX, 0.0f, text);
+            dl->AddText(font, fs, {disp.x - sz.x - pad, y}, col, text);
+            y += fs + 2.0f;
+        };
+
+        if      (s.channelView == 1) drawLabel("R", IM_COL32(255,  80,  80, 230));
+        else if (s.channelView == 2) drawLabel("G", IM_COL32( 80, 220,  80, 230));
+        else if (s.channelView == 3) drawLabel("B", IM_COL32( 80, 140, 255, 230));
+    }
+
     // ── Floating restore button (visible only when panel is hidden) ──
     if (!s.showPanel) {
         const ImGuiWindowFlags btnFlags =

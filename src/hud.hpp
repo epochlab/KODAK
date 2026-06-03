@@ -68,6 +68,9 @@ struct FrameStats {
     float       hdriYawDeg    = 0.0f;
     bool        hdriFlipV     = false;
 
+    // Channel / invert mode
+    int         channelView   = 0;    // 0=RGB 1=R 2=G 3=B
+
     // Menu / panel state
     bool        skyVisible    = false;
     bool        showPanel     = true;

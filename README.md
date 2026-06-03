@@ -24,9 +24,13 @@ make clean  # wipe build/
 | E / Q | Fly up / down |
 | LMB click | Set orbit pivot at screen centre (depth-sampled) |
 | LMB drag | Tumble camera around pivot |
+| R / G / B | Toggle red / green / blue channel isolation (press again to clear) |
+| Y | Toggle luminance AOV (Rec. 709); press again to restore previous AOV |
+| I | Toggle invert (`1 − colour`) |
+| H | Show / hide HUD stats panel |
 | ESC | Quit |
 
-All other actions are in the macOS menu bar:
+Other actions are in the macOS menu bar:
 
 | Menu | Item | Action |
 |------|------|--------|
@@ -39,6 +43,8 @@ All other actions are in the macOS menu bar:
 ## HUD Panel
 
 The overlay panel (top-left) shows frame timing, memory, viewport, scene stats, and camera parameters. When hidden, a **◈** button in the top-right corner restores it.
+
+When channel isolation is active (R / G / B hotkey) a coloured label appears in the top-right corner of the viewport — always visible regardless of panel state.
 
 **AOV** dropdown (bottom of panel) — selects the active output channel:
 

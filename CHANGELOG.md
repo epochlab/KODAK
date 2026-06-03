@@ -4,6 +4,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Channel Mode Overlay] — 2026-06-03
+
+- **R/G/B viewport indicator** — active channel isolation is shown as a coloured text label (R in red, G in green, B in blue) in the top-right corner of the viewport; nothing rendered when in full RGB mode; always visible regardless of HUD panel state
+
+---
+
 ## [Histogram Fixes + FPS Graph] — 2026-06-02
 
 - **Histogram — internal diagonal artefacts fixed** — `AddConcavePolyFilled` applied AA fringe to every edge of each ear-clip sub-triangle, including internal shared edges; doubled fringes appeared as bright diagonal lines through every channel fill. Fixed by disabling `ImDrawListFlags_AntiAliasedFill` for the fill call; `AddPolyline` retains its own AA for the smooth top curve.
