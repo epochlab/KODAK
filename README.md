@@ -115,7 +115,8 @@ All fields are optional; missing keys fall back to defaults.
     "ior":            1.5,      // index of refraction (1.5 ≈ plastic/glass)
     "ssaoRadius":     0.5,      // SSAO hemisphere radius in world units
     "ssaoBias":       0.025,    // SSAO depth bias
-    "ssaoBlurRadius": 2         // SSAO blur: 1 = 3×3, 2 = 5×5
+    "ssaoBlurRadius": 2,        // SSAO blur: 1 = 3×3, 2 = 5×5
+    "ssaoHalfRes":    false     // true = half-res SSAO, false = full-res (default)
   }
 }
 ```

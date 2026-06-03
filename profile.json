@@ -31,6 +31,7 @@
     "ior": 1.5,
     "ssaoRadius": 0.5,
     "ssaoBias": 0.025,
-    "ssaoBlurRadius": 2
+    "ssaoBlurRadius": 2,
+    "ssaoHalfRes": false
   }
 }

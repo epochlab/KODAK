@@ -119,8 +119,8 @@ int main() {
         const int BASE_W      = cfg.render.width  > 0 ? cfg.render.width  : 2048;
         const int BASE_H      = cfg.render.height > 0 ? cfg.render.height : 1152;
         const int downsample  = cfg.render.downsample > 0 ? cfg.render.downsample : 2;
-        const int AO_W        = BASE_W / 2;
-        const int AO_H        = BASE_H / 2;
+        const int AO_W        = cfg.shading.ssaoHalfRes ? BASE_W / 2 : BASE_W;
+        const int AO_H        = cfg.shading.ssaoHalfRes ? BASE_H / 2 : BASE_H;
 
         Window win(BASE_W / downsample, BASE_H / downsample, "KODAK");
         glfwSetCursorPosCallback(win.handle(), onMouseMove);
