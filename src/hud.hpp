@@ -70,7 +70,6 @@ struct FrameStats {
 
     // Channel / invert mode
     int         channelView   = 0;    // 0=RGB 1=R 2=G 3=B
-    bool        invertColors  = false;
 
     // Menu / panel state
     bool        skyVisible    = false;

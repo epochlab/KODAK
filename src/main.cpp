@@ -607,7 +607,6 @@ int main() {
             stats.camFar          = camera.farPlane();
             stats.viewMode        = viewMode;
             stats.channelView     = channelView;
-            stats.invertColors    = invertColors;
             stats.hdriYawDeg      = cfg.hdri.rotation.y;
             stats.hdriFlipV       = cfg.hdri.flipV;
             stats.skyVisible      = skyVisible;
