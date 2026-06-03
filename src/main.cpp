@@ -356,8 +356,8 @@ int main() {
                 if (edge(GLFW_KEY_G, prevKeys.g)) channelView = (channelView == 2) ? 0 : 2;
                 if (edge(GLFW_KEY_B, prevKeys.b)) channelView = (channelView == 3) ? 0 : 3;
                 if (edge(GLFW_KEY_Y, prevKeys.y)) {
-                    if (viewMode == 3) { viewMode = preLumMode; }
-                    else { preLumMode = viewMode; viewMode = 3; }
+                    if (viewMode == 8) { viewMode = preLumMode; }
+                    else { preLumMode = viewMode; viewMode = 8; }
                 }
                 if (edge(GLFW_KEY_H, prevKeys.h)) stats.showPanel = !stats.showPanel;
                 if (edge(GLFW_KEY_I, prevKeys.i)) invertColors = !invertColors;
@@ -433,8 +433,8 @@ int main() {
             glEnable(GL_DEPTH_TEST);
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glPolygonMode(GL_FRONT_AND_BACK, viewMode == 6 ? GL_LINE : GL_FILL);
-            if (viewMode == 6) {
+            glPolygonMode(GL_FRONT_AND_BACK, viewMode == 4 ? GL_LINE : GL_FILL);
+            if (viewMode == 4) {
                 glEnable(GL_POLYGON_OFFSET_LINE);
                 glPolygonOffset(-1.0f, -1.0f);
             }
@@ -489,7 +489,7 @@ int main() {
             }
 
             // Bounds AOV: draw AABB wireframe box after geometry.
-            if (viewMode == 5) {
+            if (viewMode == 3) {
                 glDepthMask(GL_FALSE);
                 lineShader.use();
                 lineShader.set("uVP", proj * view);

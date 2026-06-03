@@ -50,19 +50,21 @@ When channel isolation is active (R / G / B hotkey) a coloured label appears in 
 | Mode | Channel |
 |------|---------|
 | beauty | PBR: Fresnel-weighted diffuse + specular IBL |
-| wireframe | Triangle edges |
-| bounds | Flat grey geometry + yellow AABB wireframe box (GL_LINES, depth-tested) |
 | alpha | Albedo alpha channel |
+| bounds | Flat grey geometry + yellow AABB wireframe box (GL_LINES, depth-tested) |
+| wireframe | Triangle edges |
 | depth | Linearised scene depth |
+| albedo | Raw albedo texture |
+| hsv | Hue / saturation / value decomposition |
+| luminance | Rec. 709 greyscale |
+| direct_diffuse | Full irradiance diffuse lobe |
+| direct_refl | Fresnel-weighted reflection lobe |
 | world_pos | World-space position normalised within scene AABB |
 | world_normals | World-space vertex normals |
 | uv | UV coordinates |
-| albedo | Raw albedo texture |
-| direct_diffuse | Full irradiance diffuse lobe |
-| direct_refl | Fresnel-weighted reflection lobe |
 | shading_normal | TBN-perturbed shading normal |
-| ao | SSAO occlusion |
 | fresnel | F term — red (facing) → green (grazing) |
+| occlusion | SSAO occlusion |
 
 **Histogram** — RGB or greyscale channel distribution plotted below the AOV selector:
 - Full-RGB passes (beauty, albedo, normals, …) show B/G/R filled curves back-to-front with a white overlap zone where all three channels coincide

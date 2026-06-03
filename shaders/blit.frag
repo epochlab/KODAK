@@ -12,8 +12,8 @@ uniform bool      uInvert;      // invert colour values
 out vec4 FragColor;
 
 void main() {
-    if (uViewMode == 15) {
-        // AO: black for sky pixels (depth at far plane), AO value for geometry.
+    if (uViewMode == 16) {
+        // occlusion: black for sky pixels (depth at far plane), AO value for geometry.
         float depth = texture(uDepth, vUV).r;
         float ao    = (depth >= 0.9999) ? 0.0 : texture(uAO, vUV).r;
         FragColor   = vec4(ao, ao, ao, 1.0);
@@ -23,10 +23,10 @@ void main() {
             float depth = texture(uDepth, vUV).r;
             float ao    = (depth >= 0.9999) ? 1.0 : texture(uAO, vUV).r;
             color *= ao;
-        } else if (uViewMode == 3) {
+        } else if (uViewMode == 8) {
             float k = dot(color, vec3(0.2126, 0.7152, 0.0722));
             color = vec3(k);
-        } else if (uViewMode == 4) {
+        } else if (uViewMode == 7) {
             // RGB → HSV; H=red channel, S=green, V=blue
             vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
             vec4 p = mix(vec4(color.bg, K.wz), vec4(color.gb, K.xy), step(color.b, color.g));

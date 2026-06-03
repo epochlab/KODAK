@@ -4,6 +4,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [AOV Reorder] — 2026-06-03
+
+- **AOV dropdown reordered** — modes regrouped by category: beauty → alpha → bounds → wireframe → depth → albedo → hsv → luminance → direct_diffuse → direct_refl → world_pos → world_normals → uv → shading_normal → fresnel → occlusion
+- **"ao" renamed to "occlusion"** — consistent lowercase underscore naming across all AOV labels
+
+---
+
 ## [Menu — HUD Toggle Fix] — 2026-06-03
 
 - **"Sky Background" menu item removed** — sky visibility is controllable via the HUD HDRI section; the redundant menu toggle is gone

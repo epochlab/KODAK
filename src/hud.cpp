@@ -194,10 +194,10 @@ void HUD::draw(FrameStats& s) {
     // ── AOV ───────────────────────────────────────────────────
     sectionHeader("AOV");
     static const char* k_modeNames[] = {
-        "beauty", "alpha", "luminance", "hsv",
-        "bounds", "wireframe",
-        "depth", "world_pos", "world_normals", "uv", "albedo",
-        "direct_diffuse", "direct_refl", "shading_normal", "ao", "fresnel"
+        "beauty", "alpha", "bounds", "wireframe", "depth",
+        "albedo", "hsv", "luminance",
+        "direct_diffuse", "direct_refl", "world_pos", "world_normals", "uv",
+        "shading_normal", "fresnel", "occlusion"
     };
     int modeIdx = s.viewMode - 1;
     ImGui::SetNextItemWidth(-1.0f);
