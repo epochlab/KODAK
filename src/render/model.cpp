@@ -181,6 +181,7 @@ Model Model::loadGLTF(const std::string& path) {
         model.m_boundsMin = glm::min(model.m_boundsMin, lo);
         model.m_boundsMax = glm::max(model.m_boundsMax, hi);
     }
+    model.m_centre = (model.m_boundsMin + model.m_boundsMax) * 0.5f;
 
     return model;
 }
