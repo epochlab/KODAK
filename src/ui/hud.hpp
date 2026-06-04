@@ -59,6 +59,13 @@ struct FrameStats {
     float     camFocalLengthMm = 31.2f;
     float     camNear         = 0.0f;
     float     camFar          = 0.0f;
+    float     camISO          = 100.f;
+    float     camFStop        =   8.f;
+    float     camShutterSpeed =   0.01f;
+    float     camFocusDist    =  10.f;
+    bool      camDofEnabled   = false;
+    bool      camAspectEnabled = false;
+    float     camAspectRatio  =   2.35f;
 
     // View mode
     int         viewMode      = 1;
@@ -68,8 +75,10 @@ struct FrameStats {
     int         histValid     = 0;
 
     // HDRI controls
-    float       hdriYawDeg = 0.0f;
-    bool        hdriFlipV  = false;
+    float       hdriYawDeg   = 0.0f;
+    bool        hdriFlipV    = false;
+    float       hdriIntensity = 1.0f;
+    float       hdriEvOffset  = 0.0f;  // cfg.hdri.exposure — EV offset in stops
 
     // Channel / invert mode
     int         channelView   = 0;    // 0=RGB 1=R 2=G 3=B

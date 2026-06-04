@@ -4,6 +4,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Physical Camera & DoF] — 2026-06-04
+
+- **Exposure triangle** — ISO × shutter / f-stop² mapped to a linear multiplier applied in the blit composite pass; all light (sky + IBL scene) scales uniformly; IBL baking uses neutral exposure=1.0; `cfg.hdri.exposure` is now an EV offset
+- **Screen-space DoF** — opt-in (Enable DoF checkbox); Poisson-disc kernel with configurable 1–16 taps (`dofSamples` in `profile.json`); circle-of-confusion from the thin-lens formula; zero GPU cost when disabled; bypasses at near-pinhole apertures
+- **Cinematic letterbox** — free-form aspect ratio slider (1.0–4.0:1); bars at 70% opacity with 1px white edge; default 2.35:1; persisted in config
+- **HDRI intensity** — decoupled from EV offset; separate 0–5× linear multiplier applied as a per-frame `uHdriIntensity` uniform (no rebake); sky and IBL respond independently
+- **HDRI EV offset slider** — −4 to +4 stop range wired to `cfg.hdri.exposure`; combined with physical camera exposure in the blit composite
+- **Histogram cropped to content region** — blit source rect clamped to letterbox content bounds; bars and white edge pixels excluded from histogram data
+- **Focus distance slider** — logarithmic scale (0.1–100 m, 3 decades)
+- **HDRI sliders in debug AOVs** — `direct_diffuse` (mode 9) and `direct_refl` (mode 10) now respond to both Intensity and EV offset, matching beauty-mode behaviour
+- **5 new camera tests** — exposure reference point, 3 linearity checks, CoC scale (97 tests total)
+
+---
+
 ## [Optimisation Sprint] — 2026-06-04
 
 7-step render-loop optimisation delivering a **3.2× FPS improvement** (66 → 213 FPS mean) on the benchmark scene (`--benchmark 300`, 2048×1152, ssaoSamples=8). Results in `benchmarks/`.

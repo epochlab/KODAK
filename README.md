@@ -174,7 +174,7 @@ scene.json                  — scene content (camera, HDRI, geometry, material 
 | Directory Structure — domain-based layout: core/, render/, camera/, ui/ | ✓ |
 | Tests — Catch2 v3 suite, 91 tests / 571 assertions, PBR math, all 16 AOVs, SSAO, CPU math, headless GL | ✓ |
 | Performance profiling and optimisation — benchmark infrastructure, GPU query rings, async PBO readback, separable SSAO blur, IBL precomputation, SSAO kernel UBO, uniform location pre-cache: **3.2× FPS** (66→213) | ✓ |
-| Camera &  — ISO, f-stop, shutter speed, focus distance, aspect ratio | planned |
+| Physical Camera — ISO/f-stop/shutter exposure triangle, screen-space DoF (thin-lens CoC, Poisson-disc), cinematic letterbox, HDRI EV offset + intensity, per-AOV HDRI response | ✓ |
 | Color Management — OpenEXR I/O linear pipeline, OCIO ACES workflow w/ OCIO Display Transform (sRGB / Rec.709), White Balance & Kelvin-based lighting controls, | planned |
 | Rendering — Thin lens model, Physical-based spectral GPU path tracing render engine, Monte Carlo Unbiased Global Illumination (Indirect/Multiple Scattering), Correct exposure, Linear workflow, Adaptive Sampling / Multiple importance sampling (MIS), Recursive tracing, Russian roulette termination, Energy conservation, Spectral light transport, Wavelength sampling, Spectral materials, Spectral dispersion, BSDF / PBR materials, BRDF sampling + Importance Sampling, Next-event estimation, HDR IBL, Tone-mapping, Area lights, Shadows / Soft shadows, BVH acceleration, Fresnel effects, Caustics, Path throughput accumulation, Radiance estimation formulation | planned |
 | Post Lens Effects - DoF, chromatic aberration, anamorphic lenses, film grain

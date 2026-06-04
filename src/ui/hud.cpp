@@ -1,5 +1,6 @@
 #include "hud.hpp"
 #include <algorithm>
+#include <cmath>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -116,7 +117,7 @@ void HUD::draw(FrameStats& s) {
 
     ImGui::SetNextWindowPos({10.0f, 10.0f}, ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(0.72f);
-    ImGui::SetNextWindowSize({230.0f, 0.0f});
+    ImGui::SetNextWindowSize({260.0f, 0.0f});
 
     if (!ImGui::Begin("##hud", nullptr, flags)) { ImGui::End(); return; }
 
@@ -191,6 +192,55 @@ void HUD::draw(FrameStats& s) {
     sectionHeader("Lens");
     ImGui::SetNextItemWidth(-1.0f);
     ImGui::SliderFloat("##focalLength", &s.camFocalLengthMm, 8.0f, 200.0f, "Focal Length  %.0f mm");
+
+    // ── Exposure ──────────────────────────────────────────────
+    sectionHeader("Exposure");
+    {
+        // ISO — display value in format string (avoids SameLine overflow)
+        int isoIdx = static_cast<int>(std::log2(std::max(s.camISO, 1.f) / 100.f));
+        isoIdx = std::clamp(isoIdx, 0, 7);
+        const char* isoLabels[] = {"ISO 100","ISO 200","ISO 400","ISO 800",
+                                   "ISO 1600","ISO 3200","ISO 6400","ISO 12800"};
+        ImGui::SetNextItemWidth(-1.0f);
+        if (ImGui::SliderInt("##iso", &isoIdx, 0, 7, isoLabels[isoIdx]))
+            s.camISO = 100.f * std::pow(2.f, static_cast<float>(isoIdx));
+    }
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::SliderFloat("##fstop", &s.camFStop, 1.0f, 22.0f, "f/%.1f", ImGuiSliderFlags_Logarithmic);
+    {
+        // Shutter speed: pre-compute fraction string so it displays inside the slider
+        char shutterFmt[32];
+        if (s.camShutterSpeed < 0.1f)
+            snprintf(shutterFmt, sizeof(shutterFmt), "1/%.0f s", 1.0f / s.camShutterSpeed);
+        else
+            snprintf(shutterFmt, sizeof(shutterFmt), "%.2f s", s.camShutterSpeed);
+        float shutterDisp = s.camShutterSpeed;
+        ImGui::SetNextItemWidth(-1.0f);
+        if (ImGui::SliderFloat("##shutter", &shutterDisp, 1.f/8000.f, 30.f, shutterFmt, ImGuiSliderFlags_Logarithmic))
+            s.camShutterSpeed = shutterDisp;
+    }
+    {
+        // EV₁₀₀ read-out
+        float ev100 = std::log2((s.camFStop * s.camFStop) / s.camShutterSpeed)
+                    - std::log2(s.camISO / 100.f);
+        ImGui::Text("EV100  %.2f", ev100);
+    }
+
+    // ── Depth of Field ────────────────────────────────────────
+    sectionHeader("Depth of Field");
+    ImGui::Checkbox("Enable DoF", &s.camDofEnabled);
+    if (s.camDofEnabled) {
+        ImGui::SetNextItemWidth(-1.0f);
+        ImGui::SliderFloat("##focusDist", &s.camFocusDist, 0.1f, 100.f, "%.2f m", ImGuiSliderFlags_Logarithmic);
+    }
+
+    // ── Aspect Ratio ──────────────────────────────────────────
+    sectionHeader("Aspect Ratio");
+    ImGui::Checkbox("Letterbox", &s.camAspectEnabled);
+    if (s.camAspectEnabled) {
+        ImGui::SetNextItemWidth(-1.0f);
+        ImGui::SliderFloat("##ratio", &s.camAspectRatio, 1.0f, 4.0f, "%.2f:1");
+    }
 
     // ── AOV ───────────────────────────────────────────────────
     sectionHeader("AOV");
@@ -325,6 +375,10 @@ void HUD::draw(FrameStats& s) {
     sectionHeader("HDRI");
     ImGui::SetNextItemWidth(-1.0f);
     ImGui::SliderFloat("##hdriYaw", &s.hdriYawDeg, 1.0f, 360.0f, "Y-axis  %.0f deg");
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::SliderFloat("##hdriEv", &s.hdriEvOffset, -4.0f, 4.0f, "EV  %.2f");
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::SliderFloat("##hdriIntensity", &s.hdriIntensity, 0.0f, 5.0f, "Intensity  %.2f");
     ImGui::Checkbox("Flip Y-axis", &s.hdriFlipV);
     ImGui::Checkbox("Enable Background", &s.skyVisible);
 
