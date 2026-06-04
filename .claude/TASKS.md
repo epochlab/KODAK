@@ -60,46 +60,28 @@ Here is Claude's plan:
  Both are fetched at CMake configure time. First build is slow (~15–30 min); subsequent builds use the cache.
 
  ---
- Pre-work: Benchmark Reset
+ Phase 0 — Benchmark Reset ✓ (cea6abe)
 
- Before any code changes:
- 1. Delete all files in benchmarks/ (9 old step-snapshots from the performance task)
- 2. Run the renderer, capture a fresh baseline JSON snapshot (same format as the existing benchmarks) — this is
- the new benchmarks/baseline.json
- 3. Commit as bench: reset benchmarks — pre-color-management baseline
+ - Deleted 9 stale performance snapshots from the optimisation task
+ - Captured fresh 200-frame baseline: 287 FPS on Apple M1
+ - Switched profile.json HDRI to republique EXR path (pending EXR loader)
+ - Note: profile.json had a broken subdirectory in the .jpg path; corrected before the run
 
  ---
- Phase 1 — CMake: Add OpenEXR + OCIO via FetchContent
+ Phase 1 — CMake: Add OpenEXR + OCIO via FetchContent ✓ (417babf)
 
- File: CMakeLists.txt
+ - OpenEXR v3.3.3 and OCIO v2.4.0 added via FetchContent; both linked to kodak_core
+ - Imath pulled transitively from Homebrew by OpenEXR
+ - OCIO auto-fetches yaml-cpp, pystring, minizip-ng via MISSING policy
+ - 98/98 tests pass after adding both libraries
 
- # OpenEXR (Imath is a transitive dep, auto-pulled)
- FetchContent_Declare(openexr
-     GIT_REPOSITORY https://github.com/AcademySoftwareFoundation/openexr.git
-     GIT_TAG        v3.3.3
-     GIT_SHALLOW    TRUE
- )
- set(OPENEXR_BUILD_TOOLS    OFF CACHE BOOL "" FORCE)
- set(OPENEXR_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
- set(OPENEXR_INSTALL        OFF CACHE BOOL "" FORCE)
- FetchContent_MakeAvailable(openexr)
+ Gotchas:
+ - CMAKE_CXX_STANDARD must be a CACHE variable — OCIO's CppVersion.cmake calls
+   set_property(CACHE ...) which requires it to already exist as a cache entry
+ - OCIO target in FetchContent/subproject mode is bare "OpenColorIO", not "OpenColorIO::OpenColorIO"
+   (the :: form only exists after installation via find_package)
 
- # OpenColorIO (auto-downloads yaml-cpp, expat, pystring via MISSING policy)
- FetchContent_Declare(OpenColorIO
-     GIT_REPOSITORY https://github.com/AcademySoftwareFoundation/OpenColorIO.git
-     GIT_TAG        v2.4.0
-     GIT_SHALLOW    TRUE
- )
- set(OCIO_BUILD_APPS              OFF CACHE BOOL   "" FORCE)
- set(OCIO_BUILD_TESTS             OFF CACHE BOOL   "" FORCE)
- set(OCIO_BUILD_PYTHON            OFF CACHE BOOL   "" FORCE)
- set(OCIO_INSTALL_EXT_PACKAGES  MISSING CACHE STRING "" FORCE)
- FetchContent_MakeAvailable(OpenColorIO)
-
- Link both to kodak_core:
- target_link_libraries(kodak_core PUBLIC ... OpenEXR::OpenEXR OpenColorIO::OpenColorIO)
-
- Remove src/render/stb_write_impl.cpp from the KODAK executable (PNG screenshot is gone).
+ Remove src/render/stb_write_impl.cpp from the KODAK executable deferred to Phase 3.
 
  ---
  Phase 2 — File Type Cleanup + EXR Loading
