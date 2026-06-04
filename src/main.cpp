@@ -174,8 +174,13 @@ int main(int argc, char** argv) {
 
         Shader blurShader("shaders/post/ssao.vert", "shaders/post/ssao_blur.frag");
         blurShader.use();
-        blurShader.set("uSSAO",        0);
-        blurShader.set("uBlurRadius",  cfg.shading.ssaoBlurRadius);
+        blurShader.set("uSSAO",       0);
+        blurShader.set("uBlurRadius", cfg.shading.ssaoBlurRadius);
+
+        Shader blurVShader("shaders/post/ssao.vert", "shaders/post/ssao_blur_v.frag");
+        blurVShader.use();
+        blurVShader.set("uSSAO",       0);
+        blurVShader.set("uBlurRadius", cfg.shading.ssaoBlurRadius);
 
         Shader lineShader("shaders/debug/bounds.vert", "shaders/debug/bounds.frag");
 
@@ -235,11 +240,12 @@ int main(int argc, char** argv) {
         glGenVertexArrays(1, &blitVAO);
 
         RenderTarget rt{};
-        SsaoTarget   ssaoRt{}, blurRt{};
+        SsaoTarget   ssaoRt{}, blurRt{}, blurTmpRt{};
 
         rt.create(BASE_W, BASE_H);
         ssaoRt.create(AO_W, AO_H);
         blurRt.create(AO_W, AO_H);
+        blurTmpRt.create(AO_W, AO_H);
 
         // ── Histogram readback target (256×144 RGB8, fixed size) ──────
         GLuint histFBO = 0, histTex = 0;
@@ -272,14 +278,15 @@ int main(int argc, char** argv) {
         // ── GPU timer rings (geometry, SSAO, blur, composite) ─────
         constexpr int GPU_QUERY_FRAMES = 3;
         GLuint gpuQueries[GPU_QUERY_FRAMES],     gpuPostQueries[GPU_QUERY_FRAMES];
-        GLuint gpuSsaoQueries[GPU_QUERY_FRAMES], gpuBlurQueries[GPU_QUERY_FRAMES];
+        GLuint gpuSsaoQueries[GPU_QUERY_FRAMES], gpuBlurQueries[GPU_QUERY_FRAMES], gpuBlurVQueries[GPU_QUERY_FRAMES];
         bool   queryStarted[GPU_QUERY_FRAMES]{},     postQueryStarted[GPU_QUERY_FRAMES]{};
-        bool   ssaoQueryStarted[GPU_QUERY_FRAMES]{}, blurQueryStarted[GPU_QUERY_FRAMES]{};
+        bool   ssaoQueryStarted[GPU_QUERY_FRAMES]{}, blurQueryStarted[GPU_QUERY_FRAMES]{}, blurVQueryStarted[GPU_QUERY_FRAMES]{};
         int    queryWrite = 0;
         glGenQueries(GPU_QUERY_FRAMES, gpuQueries);
         glGenQueries(GPU_QUERY_FRAMES, gpuPostQueries);
         glGenQueries(GPU_QUERY_FRAMES, gpuSsaoQueries);
         glGenQueries(GPU_QUERY_FRAMES, gpuBlurQueries);
+        glGenQueries(GPU_QUERY_FRAMES, gpuBlurVQueries);
 
         FrameStats stats{};
         stats.hdriYawDeg = cfg.hdri.rotation.y;
@@ -461,14 +468,27 @@ int main(int argc, char** argv) {
                     stats.gpuSsaoMs = static_cast<float>(ns) / 1e6f;
                 }
             }
-            if (blurQueryStarted[queryWrite]) {
-                GLint available = 0;
-                glGetQueryObjectiv(gpuBlurQueries[queryWrite], GL_QUERY_RESULT_AVAILABLE, &available);
-                if (available) {
-                    GLuint ns = 0;
-                    glGetQueryObjectuiv(gpuBlurQueries[queryWrite], GL_QUERY_RESULT, &ns);
-                    stats.gpuBlurMs = static_cast<float>(ns) / 1e6f;
+            {
+                float hMs = 0.0f, vMs = 0.0f;
+                if (blurQueryStarted[queryWrite]) {
+                    GLint available = 0;
+                    glGetQueryObjectiv(gpuBlurQueries[queryWrite], GL_QUERY_RESULT_AVAILABLE, &available);
+                    if (available) {
+                        GLuint ns = 0;
+                        glGetQueryObjectuiv(gpuBlurQueries[queryWrite], GL_QUERY_RESULT, &ns);
+                        hMs = static_cast<float>(ns) / 1e6f;
+                    }
                 }
+                if (blurVQueryStarted[queryWrite]) {
+                    GLint available = 0;
+                    glGetQueryObjectiv(gpuBlurVQueries[queryWrite], GL_QUERY_RESULT_AVAILABLE, &available);
+                    if (available) {
+                        GLuint ns = 0;
+                        glGetQueryObjectuiv(gpuBlurVQueries[queryWrite], GL_QUERY_RESULT, &ns);
+                        vMs = static_cast<float>(ns) / 1e6f;
+                    }
+                }
+                stats.gpuBlurMs = hMs + vMs;
             }
             if (postQueryStarted[queryWrite]) {
                 GLint available = 0;
@@ -585,15 +605,24 @@ int main(int argc, char** argv) {
             glEndQuery(GL_TIME_ELAPSED);
             ssaoQueryStarted[queryWrite] = true;
 
-            // ── SSAO blur pass ────────────────────────────────────
+            // ── SSAO blur H pass ──────────────────────────────────
             glBeginQuery(GL_TIME_ELAPSED, gpuBlurQueries[queryWrite]);
-            glBindFramebuffer(GL_FRAMEBUFFER, blurRt.fbo);
+            glBindFramebuffer(GL_FRAMEBUFFER, blurTmpRt.fbo);
             blurShader.use();
             glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, ssaoRt.tex);
             glDrawArrays(GL_TRIANGLES, 0, 3);
-            glBindVertexArray(0);
             glEndQuery(GL_TIME_ELAPSED);
             blurQueryStarted[queryWrite] = true;
+
+            // ── SSAO blur V pass ──────────────────────────────────
+            glBeginQuery(GL_TIME_ELAPSED, gpuBlurVQueries[queryWrite]);
+            glBindFramebuffer(GL_FRAMEBUFFER, blurRt.fbo);
+            blurVShader.use();
+            glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, blurTmpRt.tex);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindVertexArray(0);
+            glEndQuery(GL_TIME_ELAPSED);
+            blurVQueryStarted[queryWrite] = true;
 
             // ── Blit FBO → screen ──────────────────────────────────
             glBeginQuery(GL_TIME_ELAPSED, gpuPostQueries[queryWrite]);
@@ -795,9 +824,9 @@ int main(int argc, char** argv) {
                     {"ssaoBlurRadius", cfg.shading.ssaoBlurRadius},
                 }},
             };
-            std::ofstream f("benchmarks/after-step3-pbo.json");
-            if (!f) { LOG_E("Could not open benchmarks/after-step3-pbo.json for writing"); }
-            else    { f << j.dump(2) << '\n'; LOG_I("Benchmark written to benchmarks/after-step3-pbo.json"); }
+            std::ofstream f("benchmarks/after-step4-separable-blur.json");
+            if (!f) { LOG_E("Could not open benchmarks/after-step4-separable-blur.json for writing"); }
+            else    { f << j.dump(2) << '\n'; LOG_I("Benchmark written to benchmarks/after-step4-separable-blur.json"); }
         }
 
         rt.destroy();
@@ -814,6 +843,8 @@ int main(int argc, char** argv) {
         glDeleteQueries(GPU_QUERY_FRAMES, gpuPostQueries);
         glDeleteQueries(GPU_QUERY_FRAMES, gpuSsaoQueries);
         glDeleteQueries(GPU_QUERY_FRAMES, gpuBlurQueries);
+        glDeleteQueries(GPU_QUERY_FRAMES, gpuBlurVQueries);
+        blurTmpRt.destroy();
 
     } catch (const std::exception& e) {
         LOG_E(std::string("Fatal: ") + e.what());
