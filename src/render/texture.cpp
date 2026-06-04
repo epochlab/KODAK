@@ -1,26 +1,42 @@
 #include "texture.hpp"
+#include <OpenEXR/ImfRgbaFile.h>
+#include <Imath/ImathBox.h>
 #include <stb_image.h>
 #include <stdexcept>
+#include <vector>
 
 Texture::Texture(const std::string& path, GLenum wrapMode) {
-    bool isHdr = path.size() >= 4 && path.substr(path.size() - 4) == ".hdr";
+    bool isExr = path.size() >= 4 && path.substr(path.size() - 4) == ".exr";
 
-    if (isHdr) {
-        // HDR equirectangular: no flip — equirect sampling expects +Y = up.
-        stbi_set_flip_vertically_on_load(false);
-        int w, h, ch;
-        float* data = stbi_loadf(path.c_str(), &w, &h, &ch, 3);
-        if (!data)
-            throw std::runtime_error("HDR load failed: " + path + " — " + stbi_failure_reason());
-        glGenTextures(1, &m_id);
-        glBindTexture(GL_TEXTURE_2D, m_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, w, h, 0, GL_RGB, GL_FLOAT, data);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        stbi_image_free(data);
+    if (isExr) {
+        try {
+            Imf::RgbaInputFile file(path.c_str());
+            Imath::Box2i dw = file.dataWindow();
+            int w = dw.max.x - dw.min.x + 1;
+            int h = dw.max.y - dw.min.y + 1;
+
+            std::vector<Imf::Rgba> half_buf(static_cast<size_t>(w * h));
+            file.setFrameBuffer(half_buf.data() - dw.min.x - dw.min.y * w, 1, w);
+            file.readPixels(dw.min.y, dw.max.y);
+
+            std::vector<float> float_buf(static_cast<size_t>(w * h * 3));
+            for (int i = 0; i < w * h; ++i) {
+                float_buf[i*3 + 0] = half_buf[i].r;
+                float_buf[i*3 + 1] = half_buf[i].g;
+                float_buf[i*3 + 2] = half_buf[i].b;
+            }
+
+            glGenTextures(1, &m_id);
+            glBindTexture(GL_TEXTURE_2D, m_id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, w, h, 0, GL_RGB, GL_FLOAT, float_buf.data());
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        } catch (const std::exception& e) {
+            throw std::runtime_error("EXR load failed: " + path + " — " + std::string(e.what()));
+        }
         return;
     }
 

@@ -1,7 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <GLFW/glfw3.h>
+#include <OpenEXR/ImfRgbaFile.h>
+#include <Imath/ImathBox.h>
+#include <filesystem>
 #include "gl_context.hpp"
 #include "texture.hpp"
+
+using Catch::Matchers::WithinAbs;
 
 TEST_CASE("Texture::white() has non-zero GL id") {
     GlContext ctx;
@@ -50,4 +56,42 @@ TEST_CASE("Texture move semantics: moved-from id becomes zero") {
     REQUIRE(t2.id() == original);
     // t.id() is now 0; its destructor must not double-free
     // Verified by no crash/sanitizer error at scope exit
+}
+
+TEST_CASE("Texture EXR round-trip: 2x2 known values load correctly") {
+    namespace fs = std::filesystem;
+    GlContext ctx;
+
+    fs::path tmp = fs::temp_directory_path() / "kodak_test_round_trip.exr";
+
+    {
+        Imf::RgbaOutputFile out(tmp.c_str(), 2, 2, Imf::WRITE_RGBA);
+        Imf::Rgba pixels[4] = {
+            {0.25f, 0.50f, 0.75f, 1.0f},
+            {1.00f, 0.00f, 0.00f, 1.0f},
+            {0.00f, 1.00f, 0.00f, 1.0f},
+            {0.00f, 0.00f, 1.00f, 1.0f},
+        };
+        out.setFrameBuffer(pixels, 1, 2);
+        out.writePixels(2);
+    }
+
+    Texture t(tmp.string());
+    REQUIRE(t.id() != 0);
+
+    t.bind(0);
+    float readback[4 * 3] = {};
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, readback);
+
+    // half-precision epsilon (~0.001 for values in [0,1])
+    CHECK_THAT(readback[0], WithinAbs(0.25f, 0.002f));
+    CHECK_THAT(readback[1], WithinAbs(0.50f, 0.002f));
+    CHECK_THAT(readback[2], WithinAbs(0.75f, 0.002f));
+
+    fs::remove(tmp);
+}
+
+TEST_CASE("Texture EXR missing file throws runtime_error") {
+    GlContext ctx;
+    REQUIRE_THROWS_AS(Texture("nonexistent.exr"), std::runtime_error);
 }
