@@ -337,10 +337,20 @@ int main(int argc, char** argv) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        // Pass kernel to SSAO shader once at startup.
-        ssaoShader.use();
+        // Pack vec3 kernel into vec4 (std140 pads vec3 → vec4).
+        std::vector<glm::vec4> kernelPadded(64, glm::vec4(0.f));
         for (int i = 0; i < cfg.shading.ssaoSamples; ++i)
-            ssaoShader.set("uKernel[" + std::to_string(i) + "]", ssaoKernel[i]);
+            kernelPadded[i] = glm::vec4(ssaoKernel[i], 0.f);
+
+        GLuint ssaoKernelUBO;
+        glGenBuffers(1, &ssaoKernelUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, ssaoKernelUBO);
+        glBufferData(GL_UNIFORM_BUFFER, 64 * sizeof(glm::vec4), kernelPadded.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ssaoKernelUBO);
+        ssaoShader.bindUniformBlock("KernelBlock", 0);
+
+        ssaoShader.use();
         ssaoShader.set("uKernelSize", cfg.shading.ssaoSamples);
         ssaoShader.set("uNoiseScale", glm::vec2(AO_W / 4.0f, AO_H / 4.0f));
 
@@ -1000,6 +1010,7 @@ int main(int argc, char** argv) {
         glDeleteTextures(1, &histTex);
         glDeleteBuffers(2, histPBOs);
         glDeleteTextures(1, &noiseTex);
+        glDeleteBuffers(1, &ssaoKernelUBO);
         glDeleteVertexArrays(1, &blitVAO);
         glDeleteVertexArrays(1, &boxVAO);
         glDeleteBuffers(1, &boxVBO);

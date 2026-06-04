@@ -20,6 +20,7 @@ public:
     void set(const std::string& name, float f) const;
     void set(const std::string& name, int i) const;
     void set(const std::string& name, bool b) const;
+    void bindUniformBlock(const std::string& name, GLuint bindingPoint) const;
 
 private:
     GLuint m_program;

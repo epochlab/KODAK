@@ -6,7 +6,7 @@ uniform sampler2D gNormal;    // view-space normals (unit 0), packed [0,1]
 uniform sampler2D gDepth;     // depth texture (unit 1)
 uniform sampler2D uNoiseTex;  // 4×4 rotation noise, GL_REPEAT (unit 2)
 
-uniform vec3  uKernel[64];    // array sized for max; active count = uKernelSize
+layout(std140) uniform KernelBlock { vec4 uKernel[64]; };
 uniform int   uKernelSize;
 uniform mat4  uProj;
 uniform mat4  uInvProj;
@@ -40,7 +40,7 @@ void main() {
     float occlusion    = 0.0;
 
     for (int i = 0; i < uKernelSize; ++i) {
-        vec3 sampleVS = fragPosVS + TBN * uKernel[i] * uRadius;
+        vec3 sampleVS = fragPosVS + TBN * uKernel[i].xyz * uRadius;
 
         vec4 offset = uProj * vec4(sampleVS, 1.0);
         offset.xyz /= offset.w;

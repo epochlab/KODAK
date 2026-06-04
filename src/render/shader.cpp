@@ -89,3 +89,9 @@ void Shader::set(const std::string& name, int i) const {
 void Shader::set(const std::string& name, bool b) const {
     glUniform1i(loc(name), b ? 1 : 0);
 }
+
+void Shader::bindUniformBlock(const std::string& name, GLuint bindingPoint) const {
+    GLuint idx = glGetUniformBlockIndex(m_program, name.c_str());
+    if (idx != GL_INVALID_INDEX)
+        glUniformBlockBinding(m_program, idx, bindingPoint);
+}
