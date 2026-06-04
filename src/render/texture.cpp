@@ -19,11 +19,17 @@ Texture::Texture(const std::string& path, GLenum wrapMode) {
             file.setFrameBuffer(half_buf.data() - dw.min.x - dw.min.y * w, 1, w);
             file.readPixels(dw.min.y, dw.max.y);
 
+            // Flip Y: EXR row 0 = top; OpenGL expects row 0 = bottom for equirect sampling.
             std::vector<float> float_buf(static_cast<size_t>(w * h * 3));
-            for (int i = 0; i < w * h; ++i) {
-                float_buf[i*3 + 0] = half_buf[i].r;
-                float_buf[i*3 + 1] = half_buf[i].g;
-                float_buf[i*3 + 2] = half_buf[i].b;
+            for (int y = 0; y < h; ++y) {
+                int src_y = h - 1 - y;
+                for (int x = 0; x < w; ++x) {
+                    int src = src_y * w + x;
+                    int dst = y * w + x;
+                    float_buf[dst*3 + 0] = half_buf[src].r;
+                    float_buf[dst*3 + 1] = half_buf[src].g;
+                    float_buf[dst*3 + 2] = half_buf[src].b;
+                }
             }
 
             glGenTextures(1, &m_id);

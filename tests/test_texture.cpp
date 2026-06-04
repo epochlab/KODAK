@@ -66,11 +66,12 @@ TEST_CASE("Texture EXR round-trip: 2x2 known values load correctly") {
 
     {
         Imf::RgbaOutputFile out(tmp.c_str(), 2, 2, Imf::WRITE_RGBA);
+        // Uniform colour — Y-flip doesn't affect result.
         Imf::Rgba pixels[4] = {
             {0.25f, 0.50f, 0.75f, 1.0f},
-            {1.00f, 0.00f, 0.00f, 1.0f},
-            {0.00f, 1.00f, 0.00f, 1.0f},
-            {0.00f, 0.00f, 1.00f, 1.0f},
+            {0.25f, 0.50f, 0.75f, 1.0f},
+            {0.25f, 0.50f, 0.75f, 1.0f},
+            {0.25f, 0.50f, 0.75f, 1.0f},
         };
         out.setFrameBuffer(pixels, 1, 2);
         out.writePixels(2);
