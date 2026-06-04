@@ -9,7 +9,7 @@
 @end
 
 @implementation AppMenuDelegate
-- (void)actionCapture:(id)sender     { _flags->doCapture  = true; }
+- (void)actionCapture:(id)sender     { _flags->doCaptureEXR = true; }
 - (void)actionSaveJson:(id)sender    { _flags->doSaveJson = true; }
 - (void)actionPanelToggle:(id)sender { _flags->showPanel  = !_flags->showPanel;  }
 @end
@@ -38,7 +38,7 @@ void initOsxMenuBar(OsxMenuFlags* flags) {
                                                keyEquivalent:@""];
     NSMenu* viewMenu = [[NSMenu alloc] initWithTitle:@"View"];
 
-    NSMenuItem* captureItem = [[NSMenuItem alloc] initWithTitle:@"Capture"
+    NSMenuItem* captureItem = [[NSMenuItem alloc] initWithTitle:@"Export OpenEXR"
                                                          action:@selector(actionCapture:)
                                                   keyEquivalent:@""];
     captureItem.target = g_delegate;
