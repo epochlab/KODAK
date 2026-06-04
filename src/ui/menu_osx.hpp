@@ -1,7 +1,7 @@
 #pragma once
 
 struct OsxMenuFlags {
-    bool doCapture  = false;
+    bool doCaptureEXR = false;
     bool doSaveJson = false;
     bool showPanel  = true;
 };

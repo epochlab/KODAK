@@ -86,7 +86,7 @@ struct FrameStats {
     // Menu / panel state
     bool        skyVisible    = false;
     bool        showPanel     = true;
-    bool        doCapture     = false;
+    bool        doCaptureEXR  = false;
     bool        doSaveJson    = false;
 };
 

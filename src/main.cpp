@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <mach/mach.h>
-#include <stb_image_write.h>
+#include "exr_io.hpp"
 #include <stdexcept>
 #include <random>
 #include <string>
@@ -1017,7 +1017,7 @@ int main(int argc, char** argv) {
             }
 
             // Merge native menu one-shot actions into stats, then sync checkmarks.
-            if (menuFlags.doCapture)  { stats.doCapture  = true; menuFlags.doCapture  = false; }
+            if (menuFlags.doCaptureEXR) { stats.doCaptureEXR = true; menuFlags.doCaptureEXR = false; }
             if (menuFlags.doSaveJson) { stats.doSaveJson = true; menuFlags.doSaveJson = false; }
             if (menuFlags.showPanel != stats.showPanel)
                 stats.showPanel = menuFlags.showPanel;
@@ -1042,24 +1042,66 @@ int main(int argc, char** argv) {
             menuFlags.showPanel = stats.showPanel;
             syncOsxMenuBar(menuFlags);
 
-            if (stats.doCapture) {
+            if (stats.doCaptureEXR) {
                 const char* home = getenv("HOME");
                 std::string desktop = home ? std::string(home) + "/Desktop" : ".";
                 std::time_t t = std::time(nullptr);
-                std::string fname = desktop + "/KODAK_" + std::to_string(t) + ".png";
-                std::vector<unsigned char> pixels(BASE_W * BASE_H * 3);
-                glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
-                glReadPixels(0, 0, BASE_W, BASE_H, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                std::vector<unsigned char> flipped(pixels.size());
-                int stride = BASE_W * 3;
-                for (int row = 0; row < BASE_H; ++row)
-                    std::copy(pixels.begin() + row * stride,
-                              pixels.begin() + (row + 1) * stride,
-                              flipped.begin() + (BASE_H - 1 - row) * stride);
-                stbi_write_png(fname.c_str(), BASE_W, BASE_H, 3, flipped.data(), stride);
-                LOG_I("Screenshot: " + fname);
-                stats.doCapture = false;
+                std::string fname = desktop + "/KODAK_" + std::to_string(t) + ".exr";
+
+                float finalExposure = camera.exposureValue() * std::pow(2.0f, cfg.hdri.exposure);
+
+                // Read GL texture → AovBuffer, flipping Y (GL bottom-left → EXR top-left).
+                auto read_rgb = [&](GLuint tex, const std::string& name, float mul) {
+                    AovBuffer buf;
+                    buf.name = name;
+                    buf.rgb.resize(static_cast<size_t>(BASE_W * BASE_H * 3));
+                    std::vector<float> tmp(static_cast<size_t>(BASE_W * BASE_H * 3));
+                    glBindTexture(GL_TEXTURE_2D, tex);
+                    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, tmp.data());
+                    for (int y = 0; y < BASE_H; ++y) {
+                        const int src_y = BASE_H - 1 - y;
+                        for (int x = 0; x < BASE_W; ++x) {
+                            const int src = (src_y * BASE_W + x) * 3;
+                            const int dst = (y     * BASE_W + x) * 3;
+                            buf.rgb[dst + 0] = tmp[src + 0] * mul;
+                            buf.rgb[dst + 1] = tmp[src + 1] * mul;
+                            buf.rgb[dst + 2] = tmp[src + 2] * mul;
+                        }
+                    }
+                    return buf;
+                };
+
+                auto read_depth = [&](GLuint tex) {
+                    AovBuffer buf;
+                    buf.name = "depth";
+                    buf.rgb.resize(static_cast<size_t>(BASE_W * BASE_H * 3));
+                    std::vector<float> tmp(static_cast<size_t>(BASE_W * BASE_H));
+                    glBindTexture(GL_TEXTURE_2D, tex);
+                    glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, tmp.data());
+                    for (int y = 0; y < BASE_H; ++y) {
+                        const int src_y = BASE_H - 1 - y;
+                        for (int x = 0; x < BASE_W; ++x) {
+                            const float d   = tmp[src_y * BASE_W + x];
+                            const int   dst = (y * BASE_W + x) * 3;
+                            buf.rgb[dst + 0] = d;
+                            buf.rgb[dst + 1] = d;
+                            buf.rgb[dst + 2] = d;
+                        }
+                    }
+                    return buf;
+                };
+
+                try {
+                    write_exr_multilayer(fname, BASE_W, BASE_H, {
+                        read_rgb(rt.colorTex,  "beauty",  finalExposure),
+                        read_rgb(rt.normalTex, "normals", 1.0f),
+                        read_depth(rt.depthTex),
+                    });
+                    LOG_I("EXR saved: " + fname);
+                } catch (const std::exception& e) {
+                    LOG_E("EXR save failed: " + std::string(e.what()));
+                }
+                stats.doCaptureEXR = false;
             }
 
             if (stats.doSaveJson) {

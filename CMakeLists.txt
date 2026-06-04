@@ -105,6 +105,7 @@ add_library(kodak_core STATIC
     src/render/model.cpp
     src/core/config.cpp
     src/render/cgltf_impl.cpp
+    src/render/exr_io.cpp
     external/stb/stb_image.cpp
 )
 target_include_directories(kodak_core PUBLIC
@@ -123,7 +124,6 @@ add_executable(KODAK
     src/main.cpp
     src/ui/hud.cpp
     src/ui/menu_osx.mm
-    src/render/stb_write_impl.cpp
 )
 target_include_directories(KODAK PRIVATE src src/ui)
 target_link_libraries(KODAK PRIVATE kodak_core imgui_lib "-framework Cocoa")
@@ -148,6 +148,7 @@ add_executable(tests_kodak
     tests/test_ssao_math.cpp
     tests/test_cpu_math.cpp
     tests/test_ssao_blur.cpp
+    tests/test_exr_io.cpp
 )
 target_include_directories(tests_kodak PRIVATE tests)
 target_link_libraries(tests_kodak PRIVATE kodak_core Catch2::Catch2WithMain)
